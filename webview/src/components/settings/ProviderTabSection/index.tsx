@@ -223,6 +223,7 @@ const ProviderTabSection = ({
         }
         onClose={closeModelDialog}
         contextWindowEnabled={dialogTarget === 'codex'}
+        maxReasoningEffortEnabled={dialogTarget === 'codex'}
         initialAddMode={modelDialogAddMode}
       />
     </div>

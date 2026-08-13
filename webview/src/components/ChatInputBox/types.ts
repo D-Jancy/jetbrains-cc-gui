@@ -248,6 +248,8 @@ export interface ModelInfo {
   id: string;
   label: string;
   description?: string;
+  /** Explicit model capability; undefined falls back to model-ID inference */
+  supportsMaxReasoningEffort?: boolean;
 }
 
 /**
@@ -540,10 +542,6 @@ export const MAX_EFFORT_CLAUDE_MODELS = new Set([
   'claude-sonnet-4-7',
   'claude-sonnet-4-6',
 ]);
-
-export function codexModelSupportsMaxEffort(modelId: string): boolean {
-  return modelId.trim().toLowerCase().includes('gpt-5.6');
-}
 
 /**
  * Reasoning Effort (thinking depth)

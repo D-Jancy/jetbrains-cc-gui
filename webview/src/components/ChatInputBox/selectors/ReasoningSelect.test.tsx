@@ -86,6 +86,38 @@ describe('ReasoningSelect', () => {
     expect(screen.getByText('Max')).toBeTruthy();
   });
 
+  it('shows max for an explicitly supported custom Codex model', () => {
+    render(
+      <ReasoningSelect
+        value="xhigh"
+        onChange={vi.fn()}
+        currentProvider="codex"
+        selectedModel="vendor/frontier-model"
+        supportsMaxReasoningEffort
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.getByText('Max')).toBeTruthy();
+  });
+
+  it('honors an explicit custom-model opt-out over GPT-5.6 ID inference', () => {
+    render(
+      <ReasoningSelect
+        value="xhigh"
+        onChange={vi.fn()}
+        currentProvider="codex"
+        selectedModel="vendor/gpt-5.6-custom"
+        supportsMaxReasoningEffort={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.queryByText('Max')).toBeNull();
+  });
+
   it('shows xhigh and max for Claude Opus 4.8', () => {
     render(
       <ReasoningSelect

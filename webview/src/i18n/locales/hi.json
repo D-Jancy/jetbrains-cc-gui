@@ -377,6 +377,10 @@
         "invalidValue": "अधिकतम कॉन्टेक्स्ट K इकाइयों में एक धनात्मक पूर्णांक होना चाहिए",
         "summary": "कॉन्टेक्स्ट: {{value}} टोकन"
       },
+      "maxReasoningEffort": {
+        "label": "MAX रीजनिंग तीव्रता समर्थित है",
+        "hint": "जब कस्टम Codex मॉडल MAX रीजनिंग तीव्रता स्वीकार करता हो, तब इसे चालू करें।"
+      },
       "configuredSectionTitle": "कॉन्फ़िगर किए गए Claude मॉडल",
       "configuredSectionDesc": "सक्रिय Claude प्रदाता या settings.json के मॉडल पहले से ही चयनकर्ता में दिखते हैं। यहाँ केवल मूल्य बदला जा सकता है।",
       "configuredEditHint": "यह मॉडल सक्रिय Claude प्रदाता या settings.json द्वारा प्रबंधित है। यहाँ केवल मूल्य बदला जा सकता है।",

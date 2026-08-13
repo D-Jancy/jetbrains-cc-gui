@@ -377,6 +377,10 @@
         "invalidValue": "Le contexte maximal doit être un entier positif en unités K",
         "summary": "Contexte : {{value}} tokens"
       },
+      "maxReasoningEffort": {
+        "label": "Prend en charge l’intensité de raisonnement MAX",
+        "hint": "Activez cette option lorsque le modèle Codex personnalisé accepte MAX comme intensité de raisonnement."
+      },
       "configuredSectionTitle": "Modèles Claude configurés",
       "configuredSectionDesc": "Les modèles du fournisseur Claude actif ou de settings.json figurent déjà dans le sélecteur. Seul le tarif peut être modifié ici.",
       "configuredEditHint": "Ce modèle est géré par le fournisseur Claude actif ou settings.json. Seul le tarif peut être modifié ici.",

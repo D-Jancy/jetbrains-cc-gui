@@ -625,6 +625,10 @@
         "invalidValue": "Maximum context must be a positive integer in K units",
         "summary": "Context: {{value}} tokens"
       },
+      "maxReasoningEffort": {
+        "label": "Supports MAX reasoning effort",
+        "hint": "Enable this when the custom Codex model accepts MAX as its reasoning effort."
+      },
       "configuredSectionTitle": "Configured Claude models",
       "configuredSectionDesc": "Models from the active Claude provider/settings.json are already in the selector. Only pricing can be changed here.",
       "configuredEditHint": "This model is managed by the active Claude provider/settings.json. Only pricing can be changed here.",

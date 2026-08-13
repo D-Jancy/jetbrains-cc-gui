@@ -29,6 +29,7 @@ function getCustomCodexModels(): ModelInfo[] {
       id: m.id,
       label: m.label || m.id,
       description: m.description,
+      supportsMaxReasoningEffort: m.supportsMaxReasoningEffort,
     }));
   } catch {
     return [];
@@ -150,6 +151,8 @@ export const ButtonArea = ({
     // customModelsVersion intentionally forces re-read of localStorage customs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentProvider, customModelsVersion, cliModels, cliCatalogHasEntries]);
+
+  const selectedModelInfo = availableModels.find(model => model.id === selectedModel);
 
   // When a dynamic model catalog arrives, ensure selection is a real entry.
   useEffect(() => {
@@ -294,7 +297,13 @@ export const ButtonArea = ({
           longContextEnabled={longContextEnabled}
           onLongContextChange={onLongContextChange}
         />
-        <ReasoningSelect value={reasoningEffort} onChange={handleReasoningChange} selectedModel={selectedModel} currentProvider={currentProvider} />
+        <ReasoningSelect
+          value={reasoningEffort}
+          onChange={handleReasoningChange}
+          selectedModel={selectedModel}
+          currentProvider={currentProvider}
+          supportsMaxReasoningEffort={selectedModelInfo?.supportsMaxReasoningEffort}
+        />
         {currentProvider === 'codex' && (
           <CodexFastModeSelect value={codexFastMode} onChange={handleCodexFastModeChange} />
         )}

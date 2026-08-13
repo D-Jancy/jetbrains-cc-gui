@@ -41,6 +41,7 @@ const AddModelDialogWrapper = ({
       onModelsChange={updateModels}
       onClose={onClose}
       contextWindowEnabled={currentProvider === 'codex'}
+      maxReasoningEffortEnabled={currentProvider === 'codex'}
       initialAddMode
     />
   );

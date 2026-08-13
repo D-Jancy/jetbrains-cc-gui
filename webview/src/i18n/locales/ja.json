@@ -377,6 +377,10 @@
         "invalidValue": "最大コンテキストはK単位の正の整数で入力してください",
         "summary": "コンテキスト: {{value}} トークン"
       },
+      "maxReasoningEffort": {
+        "label": "MAX 思考強度をサポート",
+        "hint": "カスタム Codex モデルが MAX 思考強度を受け付ける場合に有効にします。"
+      },
       "configuredSectionTitle": "設定済みの Claude モデル",
       "configuredSectionDesc": "現在の Claude プロバイダーまたは settings.json のモデルは既にモデル選択リストに表示されています。ここでは料金のみ変更できます。",
       "configuredEditHint": "このモデルは現在の Claude プロバイダーまたは settings.json で管理されています。ここでは料金のみ変更できます。",

@@ -625,6 +625,10 @@
         "invalidValue": "最大上下文必须是正整数（单位 K）",
         "summary": "上下文：{{value}} tokens"
       },
+      "maxReasoningEffort": {
+        "label": "支持 MAX 思考强度",
+        "hint": "当此自定义 Codex 模型接受 MAX 思考强度时启用；选择模型后，思考强度菜单将显示 MAX。"
+      },
       "configuredSectionTitle": "已配置的 Claude 模型",
       "configuredSectionDesc": "这些模型来自当前 Claude 供应商或 settings.json，已经会显示在模型选择器中。这里仅可修改价格。",
       "configuredEditHint": "此模型由当前 Claude 供应商或 settings.json 管理，只能在这里修改价格。",

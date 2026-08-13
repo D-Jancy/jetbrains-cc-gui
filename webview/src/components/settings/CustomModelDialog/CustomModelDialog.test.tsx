@@ -9,6 +9,57 @@ vi.mock('react-i18next', () => ({
 }));
 
 describe('CustomModelDialog', () => {
+  it('adds a Codex custom model with explicit MAX reasoning support', () => {
+    const onModelsChange = vi.fn();
+
+    render(
+      <CustomModelDialog
+        isOpen
+        models={[]}
+        onModelsChange={onModelsChange}
+        onClose={vi.fn()}
+        maxReasoningEffortEnabled
+        initialAddMode
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('settings.codexProvider.dialog.modelIdPlaceholder'), {
+      target: { value: 'vendor/frontier-model' },
+    });
+    fireEvent.click(screen.getByRole('checkbox', {
+      name: 'settings.pluginModels.maxReasoningEffort.label',
+    }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.add' }));
+
+    expect(onModelsChange).toHaveBeenCalledWith([{
+      id: 'vendor/frontier-model',
+      label: 'vendor/frontier-model',
+      description: undefined,
+      supportsMaxReasoningEffort: true,
+    }]);
+  });
+
+  it('preserves legacy GPT-5.6 MAX support when editing old custom-model metadata', () => {
+    render(
+      <CustomModelDialog
+        isOpen
+        models={[{
+          id: 'vendor/gpt-5.6-custom',
+          label: 'Legacy GPT-5.6',
+        }]}
+        onModelsChange={vi.fn()}
+        onClose={vi.fn()}
+        maxReasoningEffortEnabled
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'common.edit vendor/gpt-5.6-custom' }));
+
+    expect((screen.getByRole('checkbox', {
+      name: 'settings.pluginModels.maxReasoningEffort.label',
+    }) as HTMLInputElement).checked).toBe(true);
+  });
+
   it('adds a custom model with optional context window and pricing', () => {
     const onModelsChange = vi.fn();
 

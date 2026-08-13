@@ -150,6 +150,26 @@ describe('custom model validation', () => {
     })).toBe(true);
   });
 
+  it('accepts an optional MAX reasoning capability flag', () => {
+    expect(isValidCodexCustomModel({
+      id: 'vendor/max-model',
+      label: 'MAX Model',
+      supportsMaxReasoningEffort: true,
+    })).toBe(true);
+
+    expect(isValidCodexCustomModel({
+      id: 'vendor/standard-model',
+      label: 'Standard Model',
+      supportsMaxReasoningEffort: false,
+    })).toBe(true);
+
+    expect(isValidCodexCustomModel({
+      id: 'vendor/invalid-model',
+      label: 'Invalid Model',
+      supportsMaxReasoningEffort: 'yes',
+    })).toBe(false);
+  });
+
   it('rejects invalid custom context windows', () => {
     expect(isValidCodexCustomModel({
       id: 'zero-context',

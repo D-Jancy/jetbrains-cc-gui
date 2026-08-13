@@ -5,10 +5,10 @@ import {
   EFFORT_SUPPORTED_CLAUDE_MODELS,
   MAX_EFFORT_CLAUDE_MODELS,
   XHIGH_EFFORT_CLAUDE_MODELS,
-  codexModelSupportsMaxEffort,
   type ReasoningEffort,
 } from '../types';
 import { useDropdownPosition } from '../../../hooks/useDropdownPosition';
+import { codexModelSupportsMaxEffort } from '../../../utils/modelCapabilities';
 
 const RELATIVE_INLINE_BLOCK_STYLE: React.CSSProperties = { position: 'relative', display: 'inline-block' };
 const CHEVRON_ICON_STYLE: React.CSSProperties = { fontSize: '10px', marginLeft: '2px' };
@@ -28,6 +28,8 @@ interface ReasoningSelectProps {
   disabled?: boolean;
   selectedModel?: string;
   currentProvider?: string;
+  /** Explicit custom-model capability; undefined preserves model-ID inference. */
+  supportsMaxReasoningEffort?: boolean;
 }
 
 /**
@@ -39,7 +41,14 @@ interface ReasoningSelectProps {
  * - Claude Sonnet 5, Sonnet 4.7, Opus 4.6, and Sonnet 4.6: low/medium/high/max
  * - Claude Haiku 4.5 and legacy models: hidden (no adaptive thinking support)
  */
-export const ReasoningSelect = ({ value, onChange, disabled, selectedModel, currentProvider }: ReasoningSelectProps) => {
+export const ReasoningSelect = ({
+  value,
+  onChange,
+  disabled,
+  selectedModel,
+  currentProvider,
+  supportsMaxReasoningEffort,
+}: ReasoningSelectProps) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -53,6 +62,9 @@ export const ReasoningSelect = ({ value, onChange, disabled, selectedModel, curr
   // Determine visibility: for Claude, hide if model doesn't support adaptive thinking
   const isVisible = currentProvider !== 'claude' || !selectedModel || EFFORT_SUPPORTED_CLAUDE_MODELS.has(selectedModel);
 
+  const codexSupportsMaxEffort = supportsMaxReasoningEffort
+    ?? (selectedModel !== undefined && codexModelSupportsMaxEffort(selectedModel));
+
   // Build the list of available levels for the current model
   const availableLevels = REASONING_LEVELS.filter(level => {
     // Grok CLI only accepts low|medium|high.
@@ -60,7 +72,7 @@ export const ReasoningSelect = ({ value, onChange, disabled, selectedModel, curr
       return level.id === 'low' || level.id === 'medium' || level.id === 'high';
     }
     if (currentProvider === 'codex') {
-      return level.id !== 'max' || (selectedModel !== undefined && codexModelSupportsMaxEffort(selectedModel));
+      return level.id !== 'max' || codexSupportsMaxEffort;
     }
     if (currentProvider !== 'claude') {
       return level.id !== 'max';

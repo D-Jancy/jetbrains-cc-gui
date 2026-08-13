@@ -377,6 +377,10 @@
         "invalidValue": "최대 컨텍스트는 K 단위의 양의 정수여야 합니다",
         "summary": "컨텍스트: {{value}} 토큰"
       },
+      "maxReasoningEffort": {
+        "label": "MAX 추론 강도 지원",
+        "hint": "사용자 지정 Codex 모델이 MAX 추론 강도를 지원할 때 활성화하세요."
+      },
       "configuredSectionTitle": "구성된 Claude 모델",
       "configuredSectionDesc": "현재 Claude 제공자 또는 settings.json의 모델은 이미 모델 선택기에 표시됩니다. 여기서는 가격만 변경할 수 있습니다.",
       "configuredEditHint": "이 모델은 현재 Claude 제공자 또는 settings.json에서 관리됩니다. 여기서는 가격만 변경할 수 있습니다.",

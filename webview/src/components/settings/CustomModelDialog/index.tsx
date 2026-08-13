@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CodexCustomModel, ModelPricing } from '../../../types/provider';
+import { codexModelSupportsMaxEffort } from '../../../utils/modelCapabilities';
 // Model ID format is intentionally not restricted — see isValidModelId() JSDoc for rationale
 import styles from './style.module.less';
 
@@ -65,6 +66,8 @@ interface CustomModelDialogProps {
   onClose: () => void;
   /** Enables Codex-only context-window metadata editing. */
   contextWindowEnabled?: boolean;
+  /** Enables Codex-only MAX reasoning capability editing. */
+  maxReasoningEffortEnabled?: boolean;
   /** If provided, opens in add-model mode directly */
   initialAddMode?: boolean;
 }
@@ -119,6 +122,10 @@ function hasPricing(pricing?: ModelPricing): boolean {
   return !!pricing && PRICING_FIELDS.some(({ key }) => pricing[key] !== undefined);
 }
 
+function customModelSupportsMaxReasoningEffort(model: CodexCustomModel): boolean {
+  return model.supportsMaxReasoningEffort ?? codexModelSupportsMaxEffort(model.id);
+}
+
 function formatPricingValue(value: number | undefined): string {
   return value === undefined ? '' : String(value);
 }
@@ -150,6 +157,7 @@ export function CustomModelDialog({
   onConfiguredModelPricingChange,
   onClose,
   contextWindowEnabled = false,
+  maxReasoningEffortEnabled = false,
   initialAddMode = false,
 }: CustomModelDialogProps) {
   const { t } = useTranslation();
@@ -162,6 +170,7 @@ export function CustomModelDialog({
   const [newModelLabel, setNewModelLabel] = useState('');
   const [newModelDesc, setNewModelDesc] = useState('');
   const [newContextWindowK, setNewContextWindowK] = useState('');
+  const [newSupportsMaxReasoningEffort, setNewSupportsMaxReasoningEffort] = useState(false);
   const [newPricingInputs, setNewPricingInputs] = useState<Record<PricingFieldKey, string>>({ ...EMPTY_PRICING_INPUTS });
   const [modelIdError, setModelIdError] = useState<string | null>(null);
   const [contextWindowError, setContextWindowError] = useState<string | null>(null);
@@ -177,6 +186,7 @@ export function CustomModelDialog({
     setNewModelLabel('');
     setNewModelDesc('');
     setNewContextWindowK('');
+    setNewSupportsMaxReasoningEffort(false);
     setNewPricingInputs({ ...EMPTY_PRICING_INPUTS });
     setModelIdError(null);
     setContextWindowError(null);
@@ -268,8 +278,21 @@ export function CustomModelDialog({
       model.contextWindowTokens = contextWindowTokens;
     }
 
+    if (maxReasoningEffortEnabled) {
+      model.supportsMaxReasoningEffort = newSupportsMaxReasoningEffort;
+    }
+
     return pricing ? { ...model, pricing } : model;
-  }, [contextWindowEnabled, newModelId, newModelLabel, newModelDesc, newContextWindowK, newPricingInputs]);
+  }, [
+    contextWindowEnabled,
+    maxReasoningEffortEnabled,
+    newContextWindowK,
+    newModelDesc,
+    newModelId,
+    newModelLabel,
+    newPricingInputs,
+    newSupportsMaxReasoningEffort,
+  ]);
 
   const validateForm = useCallback((): boolean => {
     if (editingConfiguredModel) {
@@ -350,6 +373,9 @@ export function CustomModelDialog({
     setNewContextWindowK(!contextWindowEnabled || model.contextWindowTokens === undefined
       ? ''
       : String(model.contextWindowTokens / CONTEXT_WINDOW_TOKENS_PER_K));
+    setNewSupportsMaxReasoningEffort(maxReasoningEffortEnabled
+      ? customModelSupportsMaxReasoningEffort(model)
+      : false);
     setNewPricingInputs({
       inputCostPer1M: formatPricingValue(model.pricing?.inputCostPer1M),
       outputCostPer1M: formatPricingValue(model.pricing?.outputCostPer1M),
@@ -362,7 +388,7 @@ export function CustomModelDialog({
     setModelIdError(null);
     setContextWindowError(null);
     setPricingError(null);
-  }, [contextWindowEnabled]);
+  }, [contextWindowEnabled, maxReasoningEffortEnabled]);
 
   const handleEditConfiguredModelPricing = useCallback((model: CodexCustomModel) => {
     setEditingModel(null);
@@ -371,6 +397,7 @@ export function CustomModelDialog({
     setNewModelLabel(model.label || model.id);
     setNewModelDesc(model.description || '');
     setNewContextWindowK('');
+    setNewSupportsMaxReasoningEffort(false);
     setNewPricingInputs({
       inputCostPer1M: formatPricingValue(model.pricing?.inputCostPer1M),
       outputCostPer1M: formatPricingValue(model.pricing?.outputCostPer1M),
@@ -501,6 +528,11 @@ export function CustomModelDialog({
                           })}
                         </div>
                       )}
+                      {maxReasoningEffortEnabled && customModelSupportsMaxReasoningEffort(model) && (
+                        <div className={styles.modelItemMetadata}>
+                          {t('settings.pluginModels.maxReasoningEffort.label')}
+                        </div>
+                      )}
                       {hasPricing(model.pricing) && (
                         <div className={styles.modelItemPricing}>
                           {getPricingSummary(model.pricing)}
@@ -623,6 +655,24 @@ export function CustomModelDialog({
                       {contextWindowError}
                     </div>
                   )}
+                </div>
+              )}
+
+              {maxReasoningEffortEnabled && !isEditingConfiguredModel && (
+                <div className={styles.capabilityField}>
+                  <label htmlFor="model-max-reasoning-effort-input" className={styles.capabilityCheckbox}>
+                    <input
+                      id="model-max-reasoning-effort-input"
+                      type="checkbox"
+                      checked={newSupportsMaxReasoningEffort}
+                      onChange={(e) => setNewSupportsMaxReasoningEffort(e.target.checked)}
+                      aria-describedby="model-max-reasoning-effort-hint"
+                    />
+                    <span>{t('settings.pluginModels.maxReasoningEffort.label')}</span>
+                  </label>
+                  <p id="model-max-reasoning-effort-hint" className={styles.fieldHint}>
+                    {t('settings.pluginModels.maxReasoningEffort.hint')}
+                  </p>
                 </div>
               )}
 

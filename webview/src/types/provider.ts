@@ -104,6 +104,11 @@ export function isValidCodexCustomModel(model: unknown): model is CodexCustomMod
   // description is optional, but must be a string if present
   if (obj.description !== undefined && typeof obj.description !== 'string') return false;
 
+  // supportsMaxReasoningEffort is optional for backward compatibility
+  if (obj.supportsMaxReasoningEffort !== undefined && typeof obj.supportsMaxReasoningEffort !== 'boolean') {
+    return false;
+  }
+
   // contextWindowTokens is optional, but must fit the Java int-based usage pipeline
   if (obj.contextWindowTokens !== undefined) {
     if (
@@ -228,6 +233,8 @@ export interface CodexCustomModel {
   label: string;
   /** Model description */
   description?: string;
+  /** Whether this custom Codex model accepts the MAX reasoning effort */
+  supportsMaxReasoningEffort?: boolean;
   /** Optional context window size in tokens for plugin usage display */
   contextWindowTokens?: number;
   /** Optional per-million-token pricing for cost calculation */
