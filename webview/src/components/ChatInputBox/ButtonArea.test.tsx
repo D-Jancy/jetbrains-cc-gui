@@ -16,6 +16,7 @@ vi.mock('../../hooks/providers/useCliModels', () => ({
     cliCatalogHasEntries: false,
     refreshCliModels: vi.fn(),
   }),
+  useOmpRoles: () => [],
 }));
 
 vi.mock('./hooks/useToolbarSelectorCompact', () => ({
@@ -28,9 +29,10 @@ vi.mock('./selectors', () => ({
   ModeSelect: () => null,
   ModelSelect: () => null,
   CodexFastModeSelect: () => null,
-  ReasoningSelect: ({ supportsMaxReasoningEffort }: { supportsMaxReasoningEffort?: boolean }) => (
+  ReasoningSelect: () => null,
+  ModelConfigSelect: ({ supportsMaxReasoningEffort }: { supportsMaxReasoningEffort?: boolean }) => (
     <div
-      data-testid="reasoning-select"
+      data-testid="model-config-select"
       data-supports-max={String(supportsMaxReasoningEffort)}
     />
   ),
@@ -41,7 +43,7 @@ describe('ButtonArea custom model capabilities', () => {
     localStorage.clear();
   });
 
-  it('passes the selected custom model MAX capability to ReasoningSelect', () => {
+  it('passes the selected custom model MAX capability to ModelConfigSelect', () => {
     localStorage.setItem(STORAGE_KEYS.CODEX_CUSTOM_MODELS, JSON.stringify([{
       id: 'vendor/frontier-model',
       label: 'Frontier Model',
@@ -55,7 +57,7 @@ describe('ButtonArea custom model capabilities', () => {
       />,
     );
 
-    expect(screen.getByTestId('reasoning-select').getAttribute('data-supports-max')).toBe('true');
+    expect(screen.getByTestId('model-config-select').getAttribute('data-supports-max')).toBe('true');
   });
 
   it('passes an explicit false capability instead of relying on the model ID', () => {
@@ -72,6 +74,6 @@ describe('ButtonArea custom model capabilities', () => {
       />,
     );
 
-    expect(screen.getByTestId('reasoning-select').getAttribute('data-supports-max')).toBe('false');
+    expect(screen.getByTestId('model-config-select').getAttribute('data-supports-max')).toBe('false');
   });
 });
