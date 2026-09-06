@@ -118,6 +118,22 @@ describe('ReasoningSelect', () => {
     expect(screen.queryByText('Max')).toBeNull();
   });
 
+  it('shows xhigh but not max for Grok CLI', () => {
+    render(
+      <ReasoningSelect
+        value="high"
+        onChange={vi.fn()}
+        currentProvider="grok"
+        selectedModel="grok-4.6"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.getByText('XHigh')).toBeTruthy();
+    expect(screen.queryByText('Max')).toBeNull();
+  });
+
   it('shows xhigh and max for Claude Opus 4.8', () => {
     render(
       <ReasoningSelect

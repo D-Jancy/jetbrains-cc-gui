@@ -659,6 +659,7 @@ export const MAX_EFFORT_CLAUDE_MODELS = new Set([
  * Controls the depth of reasoning for AI models
  * Claude API values: low, medium, high, xhigh, max
  * Codex API values: low, medium, high, xhigh; GPT-5.6 also supports max
+ * Grok CLI values: low, medium, high, xhigh
  */
 export type ReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
