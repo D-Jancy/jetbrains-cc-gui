@@ -65,6 +65,8 @@ export interface AppDialogsProps {
   currentProvider: string;
   /** Permission dialog timeout in seconds (from backend config). */
   permissionDialogTimeoutSeconds?: number;
+  /** Apply the execution mode chosen while approving a Claude plan. */
+  onPlanApprovalModeChange?: (mode: string) => void;
 }
 
 /**
@@ -87,6 +89,7 @@ export const AppDialogs = ({
   onRewindCancel,
   currentProvider,
   permissionDialogTimeoutSeconds = DEFAULT_PERMISSION_DIALOG_TIMEOUT_SECONDS,
+  onPlanApprovalModeChange,
 }: AppDialogsProps) => {
   const { t } = useTranslation();
   const {
@@ -173,7 +176,10 @@ export const AppDialogs = ({
       <PlanApprovalDialog
         isOpen={planApprovalDialogOpen}
         request={currentPlanApprovalRequest}
-        onApprove={handlePlanApprovalApprove}
+        onApprove={(requestId, targetMode) => {
+          handlePlanApprovalApprove(requestId, targetMode);
+          onPlanApprovalModeChange?.(targetMode);
+        }}
         onReject={handlePlanApprovalReject}
         timeoutSeconds={permissionDialogTimeoutSeconds}
       />

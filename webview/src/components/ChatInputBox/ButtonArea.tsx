@@ -78,6 +78,7 @@ export const ButtonArea = ({
   selectedModel = DEFAULT_CLAUDE_MODEL_ID,
   permissionMode = 'default',
   currentProvider = 'claude',
+  codexNativeAutoReviewAvailable = true,
   reasoningEffort = 'high',
   dshPreset = '',
   codexFastMode = 'normal',
@@ -162,7 +163,9 @@ export const ButtonArea = ({
 
   // When a dynamic model catalog arrives, ensure selection is a real entry.
   useEffect(() => {
-    const isDynamicProvider = currentProvider === 'kimi' || currentProvider === 'opencode'
+    const isDynamicProvider = currentProvider === 'kimi' || currentProvider === 'minimax'
+      || currentProvider === 'zcode'
+      || currentProvider === 'opencode'
       || currentProvider === 'pi' || currentProvider === 'codex'
       || currentProvider === 'grok' || currentProvider === 'omp'
       || currentProvider === 'dsh';
@@ -303,7 +306,12 @@ export const ButtonArea = ({
           onOpenCliSettings={onOpenCliSettings}
           compact
         />
-        <ModeSelect value={permissionMode} onChange={handleModeSelect} provider={currentProvider} />
+        <ModeSelect
+          value={permissionMode}
+          onChange={handleModeSelect}
+          provider={currentProvider}
+          codexNativeAutoReviewAvailable={codexNativeAutoReviewAvailable}
+        />
         <ModelConfigSelect
           selectedModel={selectedModel}
           onModelSelect={handleModelSelect}

@@ -237,7 +237,9 @@
           "kimi": "Kimi CLI",
           "opencode": "OpenCode",
           "pi": "PI CLI",
-          "omp": "OMP CLI"
+          "omp": "OMP CLI",
+          "minimax": "MiniMax Code",
+          "zcode": "ZCode"
         },
         "currentProviderAuto": "Currently using automatic selection: {{provider}}",
         "currentProviderManual": "Currently using manually selected provider: {{provider}}",
@@ -858,6 +860,14 @@
       "copied": "Copied to clipboard",
       "copyFailed": "Failed to copy",
       "tools": {
+        "minimax": {
+          "name": "MiniMax Code",
+          "description": "MiniMax ターミナルコーディングエージェント。Node.js 22.19+ / 24+（23 は不可）が必要。コマンド: minimax / mcode"
+        },
+        "zcode": {
+          "name": "ZCode",
+          "description": "GLM モデルを搭載した Zhipu ZCode デスクトップコーディングアプリ"
+        },
         "grok": {
           "name": "Grok CLI",
           "description": "xAI Grok terminal coding agent"
@@ -1353,7 +1363,32 @@
     "bashGroupBatchExecution": "Batch Execution",
     "bashGroupCompleted": "completed",
     "bashGroupAllCompleted": "All Completed",
-    "bashGroupFailed": "failed"
+    "bashGroupFailed": "failed",
+    "reportFindings": {
+      "title": "レビュー指摘",
+      "findingsCount_one": "{{count}} 件の指摘",
+      "findingsCount_other": "{{count}} 件の指摘",
+      "confirmedCount_one": "確認済み {{count}} 件",
+      "confirmedCount_other": "確認済み {{count}} 件",
+      "plausibleCount_one": "要確認 {{count}} 件",
+      "plausibleCount_other": "要確認 {{count}} 件",
+      "confirmed": "確認済み",
+      "plausible": "要確認",
+      "fixed": "修正済み",
+      "skipped": "スキップ",
+      "noChangeNeeded": "修正不要",
+      "empty": "指摘はありません",
+      "summaryLabel": "レビュー概要",
+      "summary": "概要",
+      "failureScenario": "発生シナリオ",
+      "reviewLevel": "レビューレベル: {{level}}",
+      "openFile": "{{filePath}} を開く",
+      "expandFinding": "指摘の詳細を展開",
+      "collapseFinding": "指摘の詳細を折りたたむ",
+      "expandReport": "レビュー指摘を展開",
+      "collapseReport": "レビュー指摘を折りたたむ",
+      "untitled": "無題の指摘"
+    }
   },
   "todo": {
     "inProgress": "進行中 {{completed}}/{{total}} タスク",
@@ -1638,8 +1673,15 @@
       "tooltip": "ファイル編集を自動的に承認",
       "description": "ファイルの作成/編集を自動的に承認し、確認手順を削減"
     },
+    "auto": {
+      "label": "自動承認モード",
+      "shortLabel": "自動承認",
+      "tooltip": "プロバイダーのネイティブ審査に承認リクエストを自動処理させます",
+      "description": "安全境界を維持しながらプロバイダーのネイティブ審査を使用します"
+    },
     "bypassPermissions": {
-      "label": "自動モード",
+      "label": "完全自動",
+      "shortLabel": "完全自動",
       "tooltip": "すべての権限チェックをバイパス",
       "description": "完全自動、すべての権限チェックをバイパス[注意して使用]"
     }
@@ -1659,6 +1701,12 @@
       "label": "Auto Edit",
       "tooltip": "Codex approval_policy=on-request – asks for approval when needed",
       "description": "Balanced option. Allows normal editing flow while still requiring approvals when needed."
+    },
+    "auto": {
+      "label": "代わりに承認",
+      "shortLabel": "自動承認",
+      "tooltip": "Codex approvals_reviewer=auto_review – 自動審査が対象の承認リクエストを処理します。",
+      "description": "workspace-write サンドボックスを維持し、承認できないリクエストはエスカレーションします。"
     },
     "bypassPermissions": {
       "label": "Full Auto",
@@ -1694,6 +1742,12 @@
     },
     "codex": {
       "label": "Codex"
+    },
+    "minimax": {
+      "label": "MiniMax Code"
+    },
+    "zcode": {
+      "label": "ZCode"
     },
     "gemini": {
       "label": "Gemini Cli"

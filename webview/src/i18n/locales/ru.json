@@ -237,7 +237,9 @@
           "kimi": "Kimi CLI",
           "opencode": "OpenCode",
           "pi": "PI CLI",
-          "omp": "OMP CLI"
+          "omp": "OMP CLI",
+          "minimax": "MiniMax Code",
+          "zcode": "ZCode"
         },
         "currentProviderAuto": "Currently using automatic selection: {{provider}}",
         "currentProviderManual": "Currently using manually selected provider: {{provider}}",
@@ -865,6 +867,14 @@
       "copied": "Copied to clipboard",
       "copyFailed": "Failed to copy",
       "tools": {
+        "minimax": {
+          "name": "MiniMax Code",
+          "description": "Терминальный кодинг-агент MiniMax. Требуется Node.js 22.19+ / 24+ (не 23); команды: minimax / mcode"
+        },
+        "zcode": {
+          "name": "ZCode",
+          "description": "Десктопное кодинг-приложение Zhipu ZCode с моделями GLM"
+        },
         "grok": {
           "name": "Grok CLI",
           "description": "xAI Grok terminal coding agent"
@@ -1375,7 +1385,32 @@
     "bashGroupCompleted": "завершено",
     "bashGroupAllCompleted": "Все завершены",
     "bashGroupFailed": "ошибка",
-    "promptLabel": "Промпт"
+    "promptLabel": "Промпт",
+    "reportFindings": {
+      "title": "Результаты ревью",
+      "findingsCount_one": "{{count}} замечание",
+      "findingsCount_other": "{{count}} замечаний",
+      "confirmedCount_one": "{{count}} подтверждено",
+      "confirmedCount_other": "{{count}} подтверждено",
+      "plausibleCount_one": "{{count}} требует проверки",
+      "plausibleCount_other": "{{count}} требует проверки",
+      "confirmed": "Подтверждено",
+      "plausible": "Требует проверки",
+      "fixed": "Исправлено",
+      "skipped": "Пропущено",
+      "noChangeNeeded": "Изменения не требуются",
+      "empty": "Замечаний нет",
+      "summaryLabel": "Сводка ревью",
+      "summary": "Описание",
+      "failureScenario": "Сценарий сбоя",
+      "reviewLevel": "Уровень ревью: {{level}}",
+      "openFile": "Открыть {{filePath}}",
+      "expandFinding": "Развернуть замечание",
+      "collapseFinding": "Свернуть замечание",
+      "expandReport": "Развернуть результаты ревью",
+      "collapseReport": "Свернуть результаты ревью",
+      "untitled": "Замечание без названия"
+    }
   },
   "todo": {
     "inProgress": "В процессе {{completed}}/{{total}} задач",
@@ -1659,8 +1694,15 @@
       "tooltip": "Автоматическое принятие правок файлов",
       "description": "Автоматически принимает создание/редактирование файлов, уменьшая количество подтверждений"
     },
+    "auto": {
+      "label": "Автоодобрение",
+      "shortLabel": "Авто",
+      "tooltip": "Передавать запросы на одобрение встроенному проверяющему провайдера",
+      "description": "Использует встроенную автоматическую проверку, сохраняя границы безопасности"
+    },
     "bypassPermissions": {
-      "label": "Авто-режим",
+      "label": "Полный автомат",
+      "shortLabel": "Полный",
       "tooltip": "Пропуск всех проверок разрешений",
       "description": "Полностью автоматический, пропускает все проверки разрешений [Используйте с осторожностью]"
     }
@@ -1680,6 +1722,12 @@
       "label": "Авто-правки",
       "tooltip": "Codex approval_policy=on-request – asks for approval when needed",
       "description": "Автоматическое создание и редактирование файлов через apply_patch с сохранением одобрения команд."
+    },
+    "auto": {
+      "label": "Одобрять за меня",
+      "shortLabel": "Авто",
+      "tooltip": "Codex approvals_reviewer=auto_review — автоматический проверяющий обрабатывает подходящие запросы.",
+      "description": "Сохраняет песочницу workspace-write и передаёт пользователю запросы, которые нельзя одобрить автоматически."
     },
     "bypassPermissions": {
       "label": "Полный автомат",
@@ -1715,6 +1763,12 @@
     },
     "codex": {
       "label": "Codex"
+    },
+    "minimax": {
+      "label": "MiniMax Code"
+    },
+    "zcode": {
+      "label": "ZCode"
     },
     "gemini": {
       "label": "Gemini Cli"
