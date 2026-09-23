@@ -37,7 +37,7 @@ interface ReasoningSelectProps {
  * Visibility and available levels depend on the selected model:
  * - Codex GPT-5.6: low/medium/high/xhigh/max; other Codex models: up to xhigh
  * - Grok CLI: low/medium/high/xhigh
- * - Claude Opus 5 and Opus 4.8: low/medium/high/xhigh/max
+ * - Claude Opus 5.5, Opus 5 and Opus 4.8: low/medium/high/xhigh/max
  * - Claude Sonnet 5, Sonnet 4.7, Opus 4.6, and Sonnet 4.6: low/medium/high/max
  * - Claude Haiku 4.5 and legacy models: hidden (no adaptive thinking support)
  */
@@ -111,7 +111,10 @@ export const ReasoningSelect = ({
   useEffect(() => {
     if (embedded || !isOpen) return;
 
+    let armed = false;
+    const timer = setTimeout(() => { armed = true; }, 0);
     const handleClickOutside = (e: MouseEvent) => {
+      if (!armed) return;
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(e.target as Node) &&
@@ -122,10 +125,7 @@ export const ReasoningSelect = ({
       }
     };
 
-    const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-    }, 0);
-
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
       clearTimeout(timer);
       document.removeEventListener('mousedown', handleClickOutside);
@@ -164,7 +164,15 @@ export const ReasoningSelect = ({
             <div
               key={level.id}
               className={`selector-option ${level.id === value ? 'selected' : ''}`}
+              role="button"
+              tabIndex={0}
               onClick={() => handleSelect(level.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelect(level.id);
+                }
+              }}
               title={getReasoningText(level.id, 'description')}
             >
               <span className={`codicon ${level.icon}`} />
