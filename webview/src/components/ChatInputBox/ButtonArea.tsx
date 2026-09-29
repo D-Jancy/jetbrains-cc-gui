@@ -4,8 +4,8 @@ import type { ButtonAreaProps, CodexFastMode, ModelInfo, PermissionMode, Reasoni
 import { DEFAULT_CLAUDE_MODEL_ID } from './types';
 import { ConfigSelect, ModeSelect, ModelConfigSelect, ProviderSelect } from './selectors';
 import { STORAGE_KEYS, validateCodexCustomModels } from '../../types/provider';
-import type { CodexCustomModel } from '../../types/provider';
 import { readClaudeModelMapping } from '../../utils/claudeModelMapping';
+import { readCustomClaudeModels } from '../../utils/customClaudeModels';
 import { useCliModels, useOmpRoles } from '../../hooks/providers/useCliModels';
 import { useToolbarSelectorCompact } from './hooks/useToolbarSelectorCompact';
 import { resolveProviderModels } from './resolveProviderModels';
@@ -32,35 +32,6 @@ function getCustomCodexModels(): ModelInfo[] {
       description: m.description,
       supportsMaxReasoningEffort: m.supportsMaxReasoningEffort,
     }));
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Get custom Claude model list from localStorage
- * Uses runtime type validation for data safety
- */
-function getCustomClaudeModels(): ModelInfo[] {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return [];
-  }
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEYS.CLAUDE_CUSTOM_MODELS);
-    if (!stored) {
-      return [];
-    }
-    const parsed = JSON.parse(stored) as CodexCustomModel[];
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed
-      .filter((m): m is CodexCustomModel => !!m && typeof m === 'object' && typeof m.id === 'string' && m.id.trim().length > 0)
-      .map(m => ({
-        id: m.id,
-        label: m.label || m.id,
-        description: m.description,
-      }));
   } catch {
     return [];
   }
@@ -151,7 +122,7 @@ export const ButtonArea = ({
       provider: currentProvider,
       cliModels,
       cliCatalogHasEntries,
-      claudeCustomModels: getCustomClaudeModels(),
+      claudeCustomModels: readCustomClaudeModels(),
       codexCustomModels: getCustomCodexModels(),
       claudeMapping,
     });

@@ -1594,6 +1594,8 @@
     "pinned": "ピン留め",
     "pin": "ピン留め",
     "unpin": "ピンを外す",
+    "retiredBadge": "提供終了",
+    "retiredCustomHint": "このモデル ID は API で提供されなくなりました。カスタムモデルとして追加されているため、置き換えずにそのまま送信します。",
     "longContext": {
       "label": "1M",
       "shortLabel": "1Mコンテキスト",
