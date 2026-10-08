@@ -425,6 +425,11 @@ export const CLAUDE_MODELS: ModelInfo[] = [
     description: 'Opus 5 · Previous Opus generation',
   },
   {
+    id: 'claude-sonnet-5-5',
+    label: 'Sonnet 5.5',
+    description: 'Sonnet 5.5 · Latest Sonnet upgrade',
+  },
+  {
     id: 'claude-sonnet-5',
     label: 'Sonnet 5',
     description: 'Sonnet 5 · Use the default model',
@@ -444,6 +449,11 @@ export const CODEX_MODELS: ModelInfo[] = [
     id: 'gpt-6-astra',
     label: 'GPT-6 Astra',
     description: 'New-generation flagship for autonomous computer use and long agentic tasks.',
+  },
+  {
+    id: 'gpt-6.1-sol',
+    label: 'GPT-6.1 Sol',
+    description: 'GPT-6.1 frontier model for complex professional work.',
   },
   {
     id: 'gpt-6-sol',
@@ -736,6 +746,7 @@ export const EFFORT_SUPPORTED_CLAUDE_MODELS = new Set([
   'claude-opus-4-8',
   'claude-opus-4-6',
   'claude-opus-4-6[1m]',
+  'claude-sonnet-5-5',
   'claude-sonnet-5',
   'claude-sonnet-4-7',
   'claude-sonnet-4-6',
@@ -763,6 +774,7 @@ export const MAX_EFFORT_CLAUDE_MODELS = new Set([
   'claude-opus-4-8',
   'claude-opus-4-6',
   'claude-opus-4-6[1m]',
+  'claude-sonnet-5-5',
   'claude-sonnet-5',
   'claude-sonnet-4-7',
   'claude-sonnet-4-6',
