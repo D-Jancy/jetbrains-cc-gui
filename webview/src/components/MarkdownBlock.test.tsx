@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// DOMPurify needs jsdom's browser-compatible DOM for sanitizer integration tests.
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import hljs from 'highlight.js/lib/core';
@@ -72,6 +74,10 @@ describe('MarkdownBlock linkify integration', () => {
 
   it('copies the latest pending code through click and keyboard before highlighting catches up', async () => {
     vi.useFakeTimers();
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: async () => {} },
+    });
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
     const view = render(<MarkdownBlock content={'```unknown\nfirst'} isStreaming />);
     view.rerender(<MarkdownBlock content={'```unknown\nfirst\n<latest>& "text"'} isStreaming />);

@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
+// Pinned in package.json: its micromatch dependency is replaced with picomatch's
+// compatible isMatch API until braces has a patched release.
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
 export default defineConfig({

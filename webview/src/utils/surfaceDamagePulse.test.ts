@@ -10,11 +10,11 @@ import {
 
 describe('surfaceDamagePulse', () => {
   const tokens = ['attempt-a', 'attempt-b'];
-  let bridgeMessages: ReturnType<typeof vi.fn>;
+  let bridgeMessages: ReturnType<typeof vi.fn<(message: string) => void>>;
 
   beforeEach(() => {
     document.body.innerHTML = '<div id="app" style="zoom: 1.4"></div>';
-    bridgeMessages = vi.fn();
+    bridgeMessages = vi.fn<(message: string) => void>();
     window.sendToJava = bridgeMessages;
   });
 
