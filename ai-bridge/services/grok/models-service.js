@@ -6,6 +6,13 @@
  * OpenAI-compatible gateway catalog with third-party model ids) into the picker
  * is wrong — those ids bypass profile routing.
  *
+ * Profile shapes accepted by `grok models` (and therefore by this parser):
+ *  - `[model.name]` / `[model."name"]` / `[model.'name']` sections
+ *  - inline tables under `[model]` (`name = { model = "...", name = "..." }`)
+ *  - unquoted dotted headers such as `[model.gpt-4.1]`, which the CLI itself
+ *    registers as the first bare segment (`gpt-4`)
+ * Hidden profiles are omitted, matching `grok models`.
+ *
  * Priority:
  *  1. Profiles from config.toml (always preferred when present)
  *  2. models_cache.json (official / bare API catalogs, only when no profiles)
@@ -73,10 +80,245 @@ function extractTomlSection(src, sectionName) {
   return found ? body.join('\n') : null;
 }
 
+function stripTomlComment(line) {
+  let quote = null;
+  let escaped = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\' && quote === '"') {
+        escaped = true;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      continue;
+    }
+    if (ch === '#') return line.slice(0, i);
+  }
+  return line;
+}
+
+function splitTomlAssignment(line) {
+  const code = stripTomlComment(line).trim();
+  if (!code || code.startsWith('#')) return null;
+  let quote = null;
+  let escaped = false;
+  for (let i = 0; i < code.length; i += 1) {
+    const ch = code[i];
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\' && quote === '"') {
+        escaped = true;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      continue;
+    }
+    if (ch === '=') {
+      const key = code.slice(0, i).trim();
+      const value = code.slice(i + 1).trim();
+      if (!key || !value) return null;
+      return { key, value };
+    }
+  }
+  return null;
+}
+
+function unescapeTomlString(raw, quote) {
+  if (quote === "'") return raw;
+  return raw.replace(/\\(["\\nrt])/g, (_, ch) => {
+    if (ch === 'n') return '\n';
+    if (ch === 'r') return '\r';
+    if (ch === 't') return '\t';
+    return ch;
+  });
+}
+
+/**
+ * Parse a TOML key or scalar that may be bare, basic-quoted, or literal-quoted.
+ * Returns null when the token is not a simple key/scalar.
+ */
+function parseTomlToken(token) {
+  const text = String(token || '').trim();
+  if (!text) return null;
+  const quote = text[0];
+  if (quote === '"' || quote === "'") {
+    let escaped = false;
+    for (let i = 1; i < text.length; i += 1) {
+      const ch = text[i];
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\' && quote === '"') {
+        escaped = true;
+        continue;
+      }
+      if (ch === quote) {
+        return {
+          value: unescapeTomlString(text.slice(1, i), quote),
+          rest: text.slice(i + 1),
+        };
+      }
+    }
+    return null;
+  }
+  const bare = text.match(/^([A-Za-z0-9_-]+)/);
+  if (!bare) return null;
+  return { value: bare[1], rest: text.slice(bare[1].length) };
+}
+
+function parseTomlScalar(raw) {
+  const token = parseTomlToken(raw);
+  if (!token) return null;
+  if (raw.trim()[0] === '"' || raw.trim()[0] === "'") return token.value;
+  if (token.value === 'true') return true;
+  if (token.value === 'false') return false;
+  return token.value;
+}
+
+function parseTomlKey(raw) {
+  const token = parseTomlToken(raw);
+  if (!token || token.rest.trim()) return null;
+  return token.value;
+}
+
+function braceDepth(text) {
+  let depth = 0;
+  let quote = null;
+  let escaped = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\' && quote === '"') {
+        escaped = true;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      continue;
+    }
+    if (ch === '{') depth += 1;
+    else if (ch === '}') depth -= 1;
+  }
+  return depth;
+}
+
+function parseInlineTableFields(inner) {
+  const fields = {};
+  let quote = null;
+  let escaped = false;
+  let depth = 0;
+  let start = 0;
+  const parts = [];
+  const text = String(inner || '');
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\' && quote === '"') {
+        escaped = true;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      continue;
+    }
+    if (ch === '{') depth += 1;
+    else if (ch === '}') depth -= 1;
+    else if (ch === ',' && depth === 0) {
+      parts.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start));
+  for (const part of parts) {
+    const assignment = splitTomlAssignment(part);
+    if (!assignment) continue;
+    const key = parseTomlKey(assignment.key);
+    if (!key) continue;
+    fields[key] = parseTomlScalar(assignment.value);
+  }
+  return fields;
+}
+
+/**
+ * Model id from a `[model.<id>]` header.
+ *
+ * Quoted ids are kept whole (`[model."gpt-4.1"]` → `gpt-4.1`). Unquoted dotted
+ * headers are split by TOML the same way `grok models` does
+ * (`[model.gpt-4.1]` → `gpt-4`). Extra path segments (`model.foo.bar`) are
+ * returned as a low-priority stub so a later exact `[model.foo]` can win.
+ */
+function modelSectionIdentity(sectionName) {
+  if (!sectionName.startsWith('model.')) return null;
+  const rest = sectionName.slice('model.'.length).trim();
+  if (!rest) return null;
+  const quoted = rest[0] === '"' || rest[0] === "'";
+  const token = parseTomlToken(rest);
+  if (!token || !token.value) return null;
+  const after = token.rest.trim();
+  if (after.startsWith('.')) {
+    return quoted ? null : { id: token.value, exact: false };
+  }
+  if (after) return null;
+  return { id: token.value, exact: true };
+}
+
+function isChildOfModel(sectionName, modelId) {
+  if (!modelId) return false;
+  return sectionName === `model.${modelId}`
+    || sectionName.startsWith(`model.${modelId}.`)
+    || sectionName.startsWith(`model."${modelId}".`)
+    || sectionName.startsWith(`model.'${modelId}'.`);
+}
+
+function profileFromFields(id, fields) {
+  const nestedId = typeof fields.model === 'string' ? fields.model.trim() : '';
+  const displayName = typeof fields.name === 'string' ? fields.name.trim() : '';
+  const profile = {
+    id,
+    // Prefer explicit display name, then nested upstream model id, then profile id.
+    label: displayName || nestedId || id,
+    description: nestedId || id,
+  };
+  if (fields.supportsMaxReasoningEffort === true) {
+    profile.supportsMaxReasoningEffort = true;
+  }
+  return profile;
+}
+
 export function parseGrokProfilesFromToml(tomlText, seenSet = new Set()) {
-  const models = [];
-  let defaultModel = null;
   const src = String(tomlText || '');
+  let defaultModel = null;
 
   // Grok keeps `default` inside the `[models]` section. Restrict the match to
   // that section (falling back to the top-level region before the first
@@ -91,25 +333,114 @@ export function parseGrokProfilesFromToml(tomlText, seenSet = new Set()) {
     defaultModel = defaultMatch[1].trim();
   }
 
-  const sectionRe = /\[model\.(?:"([^"]+)"|([a-zA-Z0-9_-]+))\]([\s\S]*?)(?=\n\[|\s*$)/g;
-  let match;
-  while ((match = sectionRe.exec(src)) !== null) {
-    const id = (match[1] || match[2] || '').trim();
-    if (!id || seenSet.has(id)) continue;
-    seenSet.add(id);
-    const body = match[3] || '';
-    const nestedModel = body.match(/^\s*model\s*=\s*"([^"]+)"/m);
-    const nameMatch = body.match(/^\s*name\s*=\s*"([^"]+)"/m);
-    const nestedId = nestedModel ? nestedModel[1].trim() : '';
-    const displayName = nameMatch ? nameMatch[1].trim() : '';
-    models.push({
-      id,
-      // Prefer explicit display name, then nested upstream model id, then profile id.
-      label: displayName || nestedId || id,
-      description: nestedId || id,
-    });
-  }
+  const profiles = new Map();
+  const order = [];
+  let current = null;
+  let inlineBuffer = null;
 
+  const remember = (profile, exact) => {
+    if (!profile?.id || seenSet.has(profile.id)) return;
+    const existing = profiles.get(profile.id);
+    if (existing && existing.exact && !exact) return;
+    if (!existing) order.push(profile.id);
+    profiles.set(profile.id, { ...profile, exact: exact || existing?.exact || false });
+  };
+
+  const commitCurrent = () => {
+    if (!current || current.kind !== 'profile' || current.hidden || !current.id) {
+      current = null;
+      return;
+    }
+    remember(profileFromFields(current.id, current.fields), current.exact);
+    current = null;
+  };
+
+  const commitInline = (id, rawTable) => {
+    const text = String(rawTable || '').trim();
+    if (!text.startsWith('{') || !text.endsWith('}')) return;
+    const fields = parseInlineTableFields(text.slice(1, -1));
+    if (fields.hidden === true) return;
+    remember(profileFromFields(id, fields), true);
+  };
+
+  const lines = src.split(/\r?\n/);
+  for (const rawLine of lines) {
+    if (inlineBuffer) {
+      inlineBuffer.text += `\n${rawLine}`;
+      inlineBuffer.depth += braceDepth(rawLine);
+      if (inlineBuffer.depth <= 0) {
+        commitInline(inlineBuffer.id, inlineBuffer.text);
+        inlineBuffer = null;
+      }
+      continue;
+    }
+
+    const trimmed = stripTomlComment(rawLine).trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const header = trimmed.match(/^(\[\[|\[)\s*([^\]]+?)\s*(\]\]|\])\s*$/);
+    if (header) {
+      const isArray = header[1] === '[[';
+      const sectionName = header[2].trim();
+      if (current && current.kind === 'profile' && isChildOfModel(sectionName, current.id)) {
+        continue;
+      }
+      commitCurrent();
+      if (isArray) {
+        current = null;
+        continue;
+      }
+      if (sectionName === 'model') {
+        current = { kind: 'inline-parent' };
+        continue;
+      }
+      const identity = modelSectionIdentity(sectionName);
+      if (!identity) {
+        current = null;
+        continue;
+      }
+      current = {
+        kind: 'profile',
+        id: identity.id,
+        exact: identity.exact,
+        hidden: false,
+        fields: {},
+      };
+      continue;
+    }
+
+    if (!current) continue;
+    const assignment = splitTomlAssignment(trimmed);
+    if (!assignment) continue;
+
+    if (current.kind === 'inline-parent') {
+      const id = parseTomlKey(assignment.key);
+      if (!id || !assignment.value.startsWith('{')) continue;
+      const depth = braceDepth(assignment.value);
+      if (depth > 0) {
+        inlineBuffer = { id, text: assignment.value, depth };
+      } else {
+        commitInline(id, assignment.value);
+      }
+      continue;
+    }
+
+    const key = parseTomlKey(assignment.key);
+    if (!key) continue;
+    const value = parseTomlScalar(assignment.value);
+    if (key === 'hidden' && value === true) current.hidden = true;
+    if (key === 'id' && value === 'max') current.fields.supportsMaxReasoningEffort = true;
+    if (key === 'model' || key === 'name' || key === 'description') {
+      if (typeof value === 'string') current.fields[key] = value;
+    }
+  }
+  if (inlineBuffer) commitInline(inlineBuffer.id, inlineBuffer.text);
+  commitCurrent();
+
+  const models = order
+    .map((id) => profiles.get(id))
+    .filter(Boolean)
+    .map(({ exact, ...profile }) => profile);
+  for (const model of models) seenSet.add(model.id);
   return { models, defaultModel };
 }
 

@@ -96,7 +96,11 @@ function normalizeModels(raw: unknown): ModelInfo[] {
       ? row.label.trim()
       : id;
     const description = typeof row.description === 'string' ? row.description : undefined;
-    out.push({ id, label, description });
+    const model: ModelInfo = { id, label, description };
+    if (typeof row.supportsMaxReasoningEffort === 'boolean') {
+      model.supportsMaxReasoningEffort = row.supportsMaxReasoningEffort;
+    }
+    out.push(model);
   }
   return out;
 }
@@ -118,6 +122,8 @@ export function useCliModels(currentProvider: string) {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [errorByProvider, setErrorByProvider] = useState<Record<string, string>>({});
   const pendingLoadRef = useRef<{ provider: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+  /** Providers whose in-flight listModels must not wipe a good cached catalog on failure. */
+  const silentRefreshRef = useRef<Set<string>>(new Set());
 
   const clearPendingLoad = useCallback(() => {
     if (pendingLoadRef.current) {
@@ -126,26 +132,32 @@ export function useCliModels(currentProvider: string) {
     }
   }, []);
 
-  const beginLoad = useCallback((providerId: string) => {
-    clearPendingLoad();
-    setLoadingProvider(providerId);
-    setErrorByProvider((prev) => {
-      if (!(providerId in prev)) return prev;
-      const next = { ...prev };
-      delete next[providerId];
-      return next;
-    });
+  const beginLoad = useCallback((providerId: string, options?: { silent?: boolean }) => {
+    const silent = options?.silent === true && (modelsCache[providerId]?.length ?? 0) > 0;
+    if (silent) {
+      silentRefreshRef.current.add(providerId);
+    } else {
+      silentRefreshRef.current.delete(providerId);
+      clearPendingLoad();
+      setLoadingProvider(providerId);
+      setErrorByProvider((prev) => {
+        if (!(providerId in prev)) return prev;
+        const next = { ...prev };
+        delete next[providerId];
+        return next;
+      });
+      pendingLoadRef.current = {
+        provider: providerId,
+        timer: setTimeout(() => {
+          pendingLoadRef.current = null;
+          // No response arrived in time — fall back to the static catalog and
+          // surface the failure so the user isn't staring at a bare fallback list.
+          setLoadingProvider((current) => (current === providerId ? null : current));
+          setErrorByProvider((prev) => ({ ...prev, [providerId]: 'timeout' }));
+        }, CLI_MODELS_TIMEOUT_MS),
+      };
+    }
     sendBridgeEvent('get_cli_models', providerId);
-    pendingLoadRef.current = {
-      provider: providerId,
-      timer: setTimeout(() => {
-        pendingLoadRef.current = null;
-        // No response arrived in time — fall back to the static catalog and
-        // surface the failure so the user isn't staring at a bare fallback list.
-        setLoadingProvider((current) => (current === providerId ? null : current));
-        setErrorByProvider((prev) => ({ ...prev, [providerId]: 'timeout' }));
-      }, CLI_MODELS_TIMEOUT_MS),
-    };
   }, [clearPendingLoad]);
 
   useEffect(() => {
@@ -162,7 +174,14 @@ export function useCliModels(currentProvider: string) {
       }
       if (!payload?.provider) return;
       const provider = payload.provider;
+      const silent = silentRefreshRef.current.has(provider);
+      if (silent) silentRefreshRef.current.delete(provider);
       const models = normalizeModels(payload.models);
+      // A background refresh must not replace a live catalog with the static
+      // fallback when Grok CLI is briefly unavailable.
+      if (silent && (payload.success === false || models.length === 0)) {
+        return;
+      }
       const resolvedModels = models.length > 0 ? models : fallbackModels(provider);
       modelsCache[provider] = resolvedModels;
       catalogHasEntriesCache[provider] = models.length > 0;
@@ -228,6 +247,27 @@ export function useCliModels(currentProvider: string) {
 
     beginLoad(currentProvider);
   }, [currentProvider, modelsByProvider, beginLoad]);
+
+  // Grok custom profiles live in ~/.grok/config.toml and can change while this
+  // view is cached. Re-read them without a spinner when we already have a
+  // catalog, including when the IDE window regains focus, so models added in
+  // Grok CLI show up without a restart. Focus refreshes are debounced so
+  // clicking around the tool window does not spawn a node process each time.
+  useEffect(() => {
+    if (currentProvider !== 'grok') return;
+    let lastRefreshAt = 0;
+    const refresh = () => {
+      if (!modelsCache.grok?.length) return;
+      if (silentRefreshRef.current.has('grok')) return;
+      const now = Date.now();
+      if (now - lastRefreshAt < 10_000) return;
+      lastRefreshAt = now;
+      beginLoad('grok', { silent: true });
+    };
+    refresh();
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, [currentProvider, beginLoad]);
 
   // Switching the active Codex provider rewrites ~/.codex/config.toml, so the
   // cached catalog no longer reflects what the CLI would serve. Drop the cache

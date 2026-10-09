@@ -159,3 +159,66 @@ test('resolveGrokPickerModels uses static fallback when nothing is configured', 
   assert.deepEqual(models, GROK_STATIC_FALLBACK_MODELS);
   assert.equal(defaultModel, 'grok-4.6');
 });
+
+test('parseGrokProfilesFromToml keeps quoted dotted ids and single-quoted ids', () => {
+  const toml = `
+[model."gpt-4.1"]
+model = "gpt-4.1"
+name = "GPT 4.1"
+
+[model.'claude-3.5']
+model = 'claude-3.5'
+name = 'Claude 3.5'
+`;
+  const { models } = parseGrokProfilesFromToml(toml);
+  assert.deepEqual(models.map((m) => m.id), ['gpt-4.1', 'claude-3.5']);
+  assert.equal(models[0].label, 'GPT 4.1');
+  assert.equal(models[1].label, 'Claude 3.5');
+});
+
+test('parseGrokProfilesFromToml matches grok CLI truncation of unquoted dotted headers', () => {
+  const toml = `
+[model.gpt-4.1]
+model = "gpt-4.1"
+name = "GPT"
+`;
+  const { models } = parseGrokProfilesFromToml(toml);
+  assert.equal(models.length, 1);
+  assert.equal(models[0].id, 'gpt-4');
+  assert.equal(models[0].label, 'GPT');
+});
+
+test('parseGrokProfilesFromToml reads inline [model] tables and skips hidden profiles', () => {
+  const toml = `
+[model]
+"a.b" = { model = "a.b", name = "AB", description = "d" }
+hidden-inline = { model = "h", name = "Hidden", hidden = true }
+visible = { model = "v", name = "Visible" }
+
+[model.hidden-section]
+model = "secret"
+name = "Secret"
+hidden = true
+`;
+  const { models } = parseGrokProfilesFromToml(toml);
+  assert.deepEqual(models.map((m) => m.id), ['a.b', 'visible']);
+  assert.equal(models[0].label, 'AB');
+  assert.equal(models[1].label, 'Visible');
+});
+
+test('parseGrokProfilesFromToml keeps the parent profile when reasoning effort tables follow', () => {
+  const toml = `
+[model.thinker]
+model = "thinker"
+name = "Thinker"
+
+[[model.thinker.reasoning_efforts]]
+id = "max"
+label = "Max"
+`;
+  const { models } = parseGrokProfilesFromToml(toml);
+  assert.equal(models.length, 1);
+  assert.equal(models[0].id, 'thinker');
+  assert.equal(models[0].label, 'Thinker');
+  assert.equal(models[0].supportsMaxReasoningEffort, true);
+});
