@@ -8,8 +8,8 @@ import RewindDialog from './RewindDialog';
 import RewindSelectDialog, { type RewindableMessage } from './RewindSelectDialog';
 import ChangelogDialog from './ChangelogDialog';
 import CustomModelDialog from './settings/CustomModelDialog';
+import { resolveCustomModelDialogTarget } from './settings/customModelDialogTarget';
 import { usePluginModels } from './settings/hooks/usePluginModels';
-import { STORAGE_KEYS } from '../types/provider';
 import { CHANGELOG_DATA } from '../version/changelog';
 import { useDialogs } from '../contexts/DialogContext';
 import { useUIState } from '../contexts/UIStateContext';
@@ -30,18 +30,16 @@ const AddModelDialogWrapper = ({
   onClose: () => void;
   currentProvider: string;
 }) => {
-  const storageKey = currentProvider === 'codex'
-    ? STORAGE_KEYS.CODEX_CUSTOM_MODELS
-    : STORAGE_KEYS.CLAUDE_CUSTOM_MODELS;
-  const { models, updateModels } = usePluginModels(storageKey);
+  const target = resolveCustomModelDialogTarget(currentProvider);
+  const { models, updateModels } = usePluginModels(target.storageKey);
   return (
     <CustomModelDialog
       isOpen={isOpen}
       models={models}
       onModelsChange={updateModels}
       onClose={onClose}
-      contextWindowEnabled={currentProvider === 'codex'}
-      maxReasoningEffortEnabled={currentProvider === 'codex'}
+      contextWindowEnabled={target.contextWindowEnabled}
+      maxReasoningEffortEnabled={target.maxReasoningEffortEnabled}
       initialAddMode
     />
   );

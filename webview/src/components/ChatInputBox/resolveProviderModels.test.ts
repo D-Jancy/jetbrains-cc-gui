@@ -27,6 +27,34 @@ describe('resolveProviderModels', () => {
     ).toEqual(GROK_MODELS);
   });
 
+  it('prepends Grok plugin custom models and keeps them when the CLI catalog arrives', () => {
+    const customs = [{
+      id: 'my-grok',
+      label: 'My Grok',
+      supportsMaxReasoningEffort: true,
+      isCustom: true,
+    }];
+    const catalog = [{ id: 'grok-4.6', label: 'Grok 4.6' }];
+    const result = resolveProviderModels({
+      provider: 'grok',
+      cliModels: catalog,
+      cliCatalogHasEntries: true,
+      grokCustomModels: customs,
+    });
+    expect(result.map((m) => m.id)).toEqual(['my-grok', 'grok-4.6']);
+    expect(result[0].supportsMaxReasoningEffort).toBe(true);
+  });
+
+  it('lets a Grok custom model override a catalog entry with the same id', () => {
+    const result = resolveProviderModels({
+      provider: 'grok',
+      cliModels: [{ id: 'my-grok', label: 'Catalog' }],
+      cliCatalogHasEntries: true,
+      grokCustomModels: [{ id: 'my-grok', label: 'Custom', supportsMaxReasoningEffort: true }],
+    });
+    expect(result).toEqual([{ id: 'my-grok', label: 'Custom', supportsMaxReasoningEffort: true }]);
+  });
+
   it('does not dump static fallback as "catalog" for Codex — keeps built-ins + customs', () => {
     const customs = [{ id: 'my-gpt', label: 'My GPT' }];
     const result = resolveProviderModels({

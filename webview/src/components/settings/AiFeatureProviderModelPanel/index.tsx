@@ -60,6 +60,7 @@ const AiFeatureProviderModelPanel = ({
   // this panel so they stay identical by construction.
   const claudeCustomModels = usePluginModels(STORAGE_KEYS.CLAUDE_CUSTOM_MODELS).models;
   const codexCustomModels = usePluginModels(STORAGE_KEYS.CODEX_CUSTOM_MODELS).models;
+  const grokCustomModels = usePluginModels(STORAGE_KEYS.GROK_CUSTOM_MODELS).models;
   const availableModels = useMemo<ModelInfo[]>(() => {
     let claudeMapping = null;
     try {
@@ -67,10 +68,17 @@ const AiFeatureProviderModelPanel = ({
     } catch {
       claudeMapping = null;
     }
-    const toModelInfo = (m: { id: string; label?: string; description?: string }): ModelInfo => ({
+    const toModelInfo = (m: {
+      id: string;
+      label?: string;
+      description?: string;
+      supportsMaxReasoningEffort?: boolean;
+    }): ModelInfo => ({
       id: m.id,
       label: m.label || m.id,
       description: m.description,
+      supportsMaxReasoningEffort: m.supportsMaxReasoningEffort,
+      isCustom: true,
     });
     return resolveProviderModels({
       provider: selectedProvider,
@@ -78,9 +86,10 @@ const AiFeatureProviderModelPanel = ({
       cliCatalogHasEntries,
       claudeCustomModels: claudeCustomModels.map(toModelInfo),
       codexCustomModels: codexCustomModels.map(toModelInfo),
+      grokCustomModels: grokCustomModels.map(toModelInfo),
       claudeMapping,
     });
-  }, [selectedProvider, claudeCustomModels, codexCustomModels, cliModels, cliCatalogHasEntries]);
+  }, [selectedProvider, claudeCustomModels, codexCustomModels, grokCustomModels, cliModels, cliCatalogHasEntries]);
 
   const currentModel = config.models?.[selectedProvider] ?? '';
   const currentModelInList = availableModels.some((m) => m.id === currentModel);

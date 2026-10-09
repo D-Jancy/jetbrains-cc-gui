@@ -10,27 +10,34 @@ import { useCliModels, useOmpRoles } from '../../hooks/providers/useCliModels';
 import { useToolbarSelectorCompact } from './hooks/useToolbarSelectorCompact';
 import { resolveProviderModels } from './resolveProviderModels';
 
+const CUSTOM_MODEL_STORAGE_KEYS = new Set<string>([
+  STORAGE_KEYS.CODEX_CUSTOM_MODELS,
+  STORAGE_KEYS.GROK_CUSTOM_MODELS,
+  STORAGE_KEYS.CLAUDE_MODEL_MAPPING,
+  STORAGE_KEYS.CLAUDE_CUSTOM_MODELS,
+]);
+
 /**
- * Get custom Codex model list from localStorage
- * Uses runtime type validation for data safety
+ * Read a plugin-level custom model list from localStorage.
+ * Uses runtime type validation for data safety.
  */
-function getCustomCodexModels(): ModelInfo[] {
+function readStoredCustomModels(storageKey: string): ModelInfo[] {
   if (typeof window === 'undefined' || !window.localStorage) {
     return [];
   }
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEYS.CODEX_CUSTOM_MODELS);
+    const stored = window.localStorage.getItem(storageKey);
     if (!stored) {
       return [];
     }
     const parsed = JSON.parse(stored);
-    // Use runtime type validation
     const validModels = validateCodexCustomModels(parsed);
     return validModels.map(m => ({
       id: m.id,
       label: m.label || m.id,
       description: m.description,
       supportsMaxReasoningEffort: m.supportsMaxReasoningEffort,
+      isCustom: true,
     }));
   } catch {
     return [];
@@ -87,14 +94,14 @@ export const ButtonArea = ({
   // Listen for localStorage changes (cross-tab sync + same-tab custom events)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEYS.CODEX_CUSTOM_MODELS || e.key === STORAGE_KEYS.CLAUDE_MODEL_MAPPING || e.key === STORAGE_KEYS.CLAUDE_CUSTOM_MODELS) {
+      if (e.key && CUSTOM_MODEL_STORAGE_KEYS.has(e.key)) {
         setCustomModelsVersion(v => v + 1);
       }
     };
 
     // Listen for custom events (localStorage changes within the same tab)
     const handleCustomStorageChange = (e: CustomEvent<{ key: string }>) => {
-      if (e.detail.key === STORAGE_KEYS.CODEX_CUSTOM_MODELS || e.detail.key === STORAGE_KEYS.CLAUDE_MODEL_MAPPING || e.detail.key === STORAGE_KEYS.CLAUDE_CUSTOM_MODELS) {
+      if (e.detail?.key && CUSTOM_MODEL_STORAGE_KEYS.has(e.detail.key)) {
         setCustomModelsVersion(v => v + 1);
       }
     };
@@ -123,7 +130,8 @@ export const ButtonArea = ({
       cliModels,
       cliCatalogHasEntries,
       claudeCustomModels: readCustomClaudeModels(),
-      codexCustomModels: getCustomCodexModels(),
+      codexCustomModels: readStoredCustomModels(STORAGE_KEYS.CODEX_CUSTOM_MODELS),
+      grokCustomModels: readStoredCustomModels(STORAGE_KEYS.GROK_CUSTOM_MODELS),
       claudeMapping,
     });
     // customModelsVersion intentionally forces re-read of localStorage customs.

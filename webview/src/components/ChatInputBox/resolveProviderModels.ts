@@ -23,7 +23,19 @@ export interface ResolveProviderModelsInput {
   cliCatalogHasEntries?: boolean;
   claudeCustomModels?: ModelInfo[];
   codexCustomModels?: ModelInfo[];
+  grokCustomModels?: ModelInfo[];
   claudeMapping?: ClaudeModelMapping | null;
+}
+
+function dedupeModelsById(models: ModelInfo[]): ModelInfo[] {
+  const seen = new Set<string>();
+  const out: ModelInfo[] = [];
+  for (const model of models) {
+    if (!model?.id || seen.has(model.id)) continue;
+    seen.add(model.id);
+    out.push(model);
+  }
+  return out;
 }
 
 /**
@@ -40,6 +52,7 @@ export function resolveProviderModels({
   cliCatalogHasEntries = false,
   claudeCustomModels = [],
   codexCustomModels = [],
+  grokCustomModels = [],
   claudeMapping = null,
 }: ResolveProviderModelsInput): ModelInfo[] {
   if (provider === 'codex') {
@@ -50,10 +63,13 @@ export function resolveProviderModels({
   if (provider === 'grok') {
     // Prefer dynamic catalog (config profiles from get_cli_models). When the
     // catalog is empty/unavailable, fall back to the static profile slot.
-    if (cliCatalogHasEntries && cliModels.length > 0) {
-      return cliModels;
+    // Plugin-added Grok models are prepended so they stay visible after the
+    // add dialog saves them — the CLI catalog does not know about that store.
+    const catalog = cliModels.length > 0 ? cliModels : GROK_MODELS;
+    if (grokCustomModels.length === 0) {
+      return catalog;
     }
-    return cliModels.length > 0 ? cliModels : GROK_MODELS;
+    return dedupeModelsById([...grokCustomModels, ...catalog]);
   }
 
   if (provider === 'kimi' || provider === 'minimax' || provider === 'zcode' || provider === 'opencode' || provider === 'pi' || provider === 'dsh') {
