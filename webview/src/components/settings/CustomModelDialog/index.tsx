@@ -21,7 +21,7 @@ interface CustomModelDialogProps {
   onClose: () => void;
   /** Enables Codex-only context-window metadata editing. */
   contextWindowEnabled?: boolean;
-  /** Enables Codex-only MAX reasoning capability editing. */
+  /** Enables MAX reasoning capability editing (Codex and Grok custom models). */
   maxReasoningEffortEnabled?: boolean;
   /** If provided, opens in add-model mode directly */
   initialAddMode?: boolean;

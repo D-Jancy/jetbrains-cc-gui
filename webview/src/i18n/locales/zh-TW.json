@@ -381,7 +381,7 @@
       },
       "maxReasoningEffort": {
         "label": "支援 MAX 思考強度",
-        "hint": "當此自訂 Codex 模型接受 MAX 思考強度時啟用；選擇模型後，思考強度選單將顯示 MAX。"
+        "hint": "當此自訂模型接受 MAX 思考強度時啟用；選擇該模型後，思考強度選單將顯示 MAX。"
       },
       "configuredSectionTitle": "已設定的 Claude 模型",
       "configuredSectionDesc": "這些模型來自目前 Claude 供應商或 settings.json，已經會顯示在模型選擇器中。這裡只能修改價格。",

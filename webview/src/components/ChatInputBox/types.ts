@@ -787,7 +787,7 @@ export { codexModelSupportsMaxEffort } from '../../utils/modelCapabilities';
  * Controls the depth of reasoning for AI models
  * Claude API values: low, medium, high, xhigh, max
  * Codex API values: low, medium, high, xhigh; GPT-5.6 and GPT-6 support max
- * Grok CLI values: low, medium, high, xhigh
+ * Grok CLI values: low, medium, high, xhigh; custom models may opt into max
  */
 export type ReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 

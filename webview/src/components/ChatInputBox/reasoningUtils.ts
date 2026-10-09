@@ -20,6 +20,11 @@ export function getAvailableReasoningLevels(
 ): ReasoningInfo[] {
   return REASONING_LEVELS.filter((level) => {
     if (currentProvider === 'grok') {
+      // Built-in Grok models advertise low/medium/high/xhigh. MAX is opt-in for
+      // custom models that explicitly accept it (add-model checkbox or CLI catalog).
+      if (level.id === 'max') {
+        return supportsMaxReasoningEffort === true;
+      }
       return level.id === 'low' || level.id === 'medium' || level.id === 'high' || level.id === 'xhigh';
     }
     if (currentProvider === 'codex') {

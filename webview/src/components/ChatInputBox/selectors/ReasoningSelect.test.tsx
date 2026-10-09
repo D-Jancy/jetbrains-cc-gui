@@ -134,6 +134,23 @@ describe('ReasoningSelect', () => {
     expect(screen.queryByText('Max')).toBeNull();
   });
 
+  it('shows max for a Grok custom model that opts into MAX effort', () => {
+    render(
+      <ReasoningSelect
+        value="high"
+        onChange={vi.fn()}
+        currentProvider="grok"
+        selectedModel="my-grok"
+        supportsMaxReasoningEffort
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.getByText('XHigh')).toBeTruthy();
+    expect(screen.getByText('Max')).toBeTruthy();
+  });
+
   it('shows xhigh and max for Claude Opus 4.8', () => {
     render(
       <ReasoningSelect

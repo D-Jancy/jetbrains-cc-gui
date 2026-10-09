@@ -381,7 +381,7 @@
       },
       "maxReasoningEffort": {
         "label": "Admite intensidad de razonamiento MAX",
-        "hint": "Actívalo cuando el modelo Codex personalizado acepte MAX como intensidad de razonamiento."
+        "hint": "Actívalo cuando este modelo personalizado acepte MAX como intensidad de razonamiento. Al seleccionarlo, el menú mostrará MAX."
       },
       "configuredSectionTitle": "Modelos de Claude configurados",
       "configuredSectionDesc": "Los modelos del proveedor de Claude activo o settings.json ya aparecen en el selector. Aquí solo se puede modificar el precio.",

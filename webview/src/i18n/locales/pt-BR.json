@@ -408,7 +408,7 @@
       },
       "maxReasoningEffort": {
         "label": "Compatível com esforço de raciocínio MAX",
-        "hint": "Ative quando o modelo Codex personalizado aceitar MAX como esforço de raciocínio."
+        "hint": "Ative quando este modelo personalizado aceitar MAX como esforço de raciocínio. Depois de selecioná-lo, o menu mostra MAX."
       },
       "configuredSectionTitle": "Modelos Claude configurados",
       "configuredSectionDesc": "Os modelos do provedor Claude ativo ou do settings.json já aparecem no seletor. Aqui só é possível alterar o preço.",

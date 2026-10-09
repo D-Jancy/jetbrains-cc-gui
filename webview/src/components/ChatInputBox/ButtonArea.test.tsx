@@ -76,4 +76,26 @@ describe('ButtonArea custom model capabilities', () => {
 
     expect(screen.getByTestId('model-config-select').getAttribute('data-supports-max')).toBe('false');
   });
+
+  it('shows a Grok custom model MAX capability from the Grok store, not Claude', () => {
+    localStorage.setItem(STORAGE_KEYS.CLAUDE_CUSTOM_MODELS, JSON.stringify([{
+      id: 'claude-only',
+      label: 'Claude Only',
+      supportsMaxReasoningEffort: true,
+    }]));
+    localStorage.setItem(STORAGE_KEYS.GROK_CUSTOM_MODELS, JSON.stringify([{
+      id: 'my-grok',
+      label: 'My Grok',
+      supportsMaxReasoningEffort: true,
+    }]));
+
+    render(
+      <ButtonArea
+        currentProvider="grok"
+        selectedModel="my-grok"
+      />,
+    );
+
+    expect(screen.getByTestId('model-config-select').getAttribute('data-supports-max')).toBe('true');
+  });
 });
