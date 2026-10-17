@@ -710,14 +710,14 @@ public class ChatWindowDelegate {
 
     /**
      * Resolves the same configured Claude model mapping used by an explicit model selection,
-     * while retaining v0.5's provider-aware Codex/static context-window behavior.
+     * while retaining provider-aware Codex/Grok context-window behavior.
      */
     static int resolveModelContextLimitForRecovery(
             String provider,
             String model,
             CodemossSettingsService settingsService
     ) {
-        if ("codex".equalsIgnoreCase(provider)) {
+        if ("codex".equalsIgnoreCase(provider) || "grok".equalsIgnoreCase(provider)) {
             return SettingsHandler.getModelContextLimit(provider, model);
         }
 

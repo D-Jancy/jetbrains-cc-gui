@@ -3,9 +3,10 @@ import type { CodexCustomModel, ModelPricing } from '../../../types/provider';
 import { isValidModelPricing, STORAGE_KEYS, validateCodexCustomModels } from '../../../types/provider';
 import { sendBridgeEvent } from '../../../utils/bridge';
 
-const STORAGE_KEY_TO_PROVIDER: Partial<Record<string, 'claude' | 'codex'>> = {
+const STORAGE_KEY_TO_PROVIDER: Partial<Record<string, 'claude' | 'codex' | 'grok'>> = {
   [STORAGE_KEYS.CLAUDE_CUSTOM_MODELS]: 'claude',
   [STORAGE_KEYS.CODEX_CUSTOM_MODELS]: 'codex',
+  [STORAGE_KEYS.GROK_CUSTOM_MODELS]: 'grok',
 };
 
 /**

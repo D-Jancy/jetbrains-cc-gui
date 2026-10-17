@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import CustomModelDialog from './index';
+import { resolveCustomModelDialogTarget } from '../customModelDialogTarget';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -9,6 +10,44 @@ vi.mock('react-i18next', () => ({
 }));
 
 describe('CustomModelDialog', () => {
+  it('adds and edits the maximum context for a Grok custom model', () => {
+    const onModelsChange = vi.fn();
+    const { contextWindowEnabled, maxReasoningEffortEnabled } = resolveCustomModelDialogTarget('grok');
+    const props = {
+      isOpen: true,
+      onModelsChange,
+      onClose: vi.fn(),
+      contextWindowEnabled,
+      maxReasoningEffortEnabled,
+    };
+    const { rerender } = render(<CustomModelDialog {...props} models={[]} initialAddMode />);
+
+    fireEvent.change(screen.getByLabelText('settings.codexProvider.dialog.modelIdPlaceholder'), {
+      target: { value: 'grok-4.7' },
+    });
+    fireEvent.change(screen.getByLabelText('settings.pluginModels.contextWindow.label'), {
+      target: { value: '500' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'common.add' }));
+
+    const models = [{
+      id: 'grok-4.7',
+      label: 'grok-4.7',
+      contextWindowTokens: 500_000,
+      supportsMaxReasoningEffort: false,
+    }];
+    expect(onModelsChange).toHaveBeenLastCalledWith(models);
+
+    rerender(<CustomModelDialog {...props} models={models} />);
+    fireEvent.click(screen.getByRole('button', { name: 'common.edit grok-4.7' }));
+    const contextInput = screen.getByLabelText('settings.pluginModels.contextWindow.label') as HTMLInputElement;
+    expect(contextInput.value).toBe('500');
+    fireEvent.change(contextInput, { target: { value: '600' } });
+    fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
+
+    expect(onModelsChange).toHaveBeenLastCalledWith([{ ...models[0], contextWindowTokens: 600_000 }]);
+  });
+
   it('adds a Codex custom model with explicit MAX reasoning support', () => {
     const onModelsChange = vi.fn();
 

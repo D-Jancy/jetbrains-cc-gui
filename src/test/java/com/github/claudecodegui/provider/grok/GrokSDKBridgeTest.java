@@ -1,8 +1,11 @@
 package com.github.claudecodegui.provider.grok;
 
+import com.github.claudecodegui.provider.CustomModelContextWindowProvider;
 import com.google.gson.JsonObject;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
@@ -62,6 +65,29 @@ public class GrokSDKBridgeTest {
         assertEquals(128_000, result.get("maxTokens").getAsInt()); // grok-2 limit
         assertEquals("grok-2", result.get("model").getAsString());
         assertEquals("grok-synthesized", result.get("source").getAsString());
+    }
+
+    @Test
+    public void getContextUsageUsesCustomGrokContextWindow() throws Exception {
+        Path config = Files.createTempFile("grok-sdk-context", ".json");
+        Files.writeString(config, """
+                {"customModelContextWindows":{"grok":{"grok-4.7":500000}}}
+                """);
+        CustomModelContextWindowProvider.setInstanceForTests(
+                CustomModelContextWindowProvider.createForTests(config));
+        try {
+            GrokSDKBridge bridge = new GrokSDKBridge();
+            bridge.setLastUsedTokensForTest(50_000);
+
+            JsonObject result = bridge.getContextUsage("sess", "/tmp", "grok-4.7").join();
+
+            assertEquals(50_000, result.get("totalTokens").getAsInt());
+            assertEquals(500_000, result.get("maxTokens").getAsInt());
+            assertEquals(10.0, result.get("percentage").getAsDouble(), 0.001);
+        } finally {
+            CustomModelContextWindowProvider.setInstanceForTests(null);
+            Files.deleteIfExists(config);
+        }
     }
 
     @Test

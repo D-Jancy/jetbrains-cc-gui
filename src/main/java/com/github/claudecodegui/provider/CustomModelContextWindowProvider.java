@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.Set;
 
 /**
  * Reads user-configured model context windows from {@code ~/.codemoss/config.json}.
@@ -22,7 +23,7 @@ public final class CustomModelContextWindowProvider {
 
     private static final Logger LOG = Logger.getInstance(CustomModelContextWindowProvider.class);
     private static final String ROOT_KEY = "customModelContextWindows";
-    private static final String CODEX_PROVIDER = "codex";
+    private static final Set<String> SUPPORTED_PROVIDERS = Set.of("codex", "grok");
     private static final int TOKENS_PER_K = 1_000;
 
     private static volatile CustomModelContextWindowProvider instance;
@@ -75,11 +76,11 @@ public final class CustomModelContextWindowProvider {
         }
 
         String normalizedProvider = normalizeProvider(provider);
-        if (!CODEX_PROVIDER.equals(normalizedProvider)) {
+        if (!SUPPORTED_PROVIDERS.contains(normalizedProvider)) {
             return OptionalInt.empty();
         }
 
-        Integer contextWindow = getOrLoad().forProvider(CODEX_PROVIDER).get(modelId.trim());
+        Integer contextWindow = getOrLoad().forProvider(normalizedProvider).get(modelId.trim());
         return contextWindow == null ? OptionalInt.empty() : OptionalInt.of(contextWindow);
     }
 
@@ -119,19 +120,22 @@ public final class CustomModelContextWindowProvider {
             }
 
             JsonObject root = config.getAsJsonObject(ROOT_KEY);
-            if (!root.has(CODEX_PROVIDER) || !root.get(CODEX_PROVIDER).isJsonObject()) {
-                return new CachedContextWindows(mtime, empty);
-            }
-
-            JsonObject providerNode = root.getAsJsonObject(CODEX_PROVIDER);
-            Map<String, Integer> modelMap = new HashMap<>();
-            for (String modelId : providerNode.keySet()) {
-                Integer contextWindow = readContextWindow(providerNode.get(modelId));
-                if (contextWindow != null) {
-                    modelMap.put(modelId, contextWindow);
+            Map<String, Map<String, Integer>> byProvider = new HashMap<>();
+            for (String provider : SUPPORTED_PROVIDERS) {
+                if (!root.has(provider) || !root.get(provider).isJsonObject()) {
+                    continue;
                 }
+                JsonObject providerNode = root.getAsJsonObject(provider);
+                Map<String, Integer> modelMap = new HashMap<>();
+                for (String modelId : providerNode.keySet()) {
+                    Integer contextWindow = readContextWindow(providerNode.get(modelId));
+                    if (contextWindow != null) {
+                        modelMap.put(modelId, contextWindow);
+                    }
+                }
+                byProvider.put(provider, Map.copyOf(modelMap));
             }
-            return new CachedContextWindows(mtime, Map.of(CODEX_PROVIDER, Map.copyOf(modelMap)));
+            return new CachedContextWindows(mtime, Map.copyOf(byProvider));
         } catch (Exception e) {
             LOG.warn("[CustomModelContextWindowProvider] Failed to read config: " + e.getMessage());
             return new CachedContextWindows(mtime, empty);

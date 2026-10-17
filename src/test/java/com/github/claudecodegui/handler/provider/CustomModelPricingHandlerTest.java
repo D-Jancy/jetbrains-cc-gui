@@ -1,14 +1,20 @@
 package com.github.claudecodegui.handler.provider;
 
+import com.github.claudecodegui.provider.CustomModelContextWindowProvider;
 import com.github.claudecodegui.settings.CodemossSettingsService;
 import com.github.claudecodegui.settings.ModelPricing;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -56,6 +62,62 @@ public class CustomModelPricingHandlerTest {
         assertEquals(0.3, savedPricing.get("partial-price-model").inputCostPer1M(), 0.000001);
         assertNull(savedPricing.get("partial-price-model").outputCostPer1M());
         assertEquals(Map.of("custom-codex", 500_000), settings.contextWindowsRef.get());
+    }
+
+    @Test
+    public void shouldPersistAndClearGrokContextWindows() {
+        CapturingSettingsService settings = new CapturingSettingsService();
+        CustomModelPricingHandler handler = new CustomModelPricingHandler(null, settings);
+
+        handler.handle(CustomModelPricingHandler.SET_TYPE, """
+                {"provider":"grok","models":[
+                  {"id":"grok-4.7","contextWindowTokens":500000},
+                  {"id":"sub-k","contextWindowTokens":500},
+                  {"id":"partial-k","contextWindowTokens":500500},
+                  {"id":"overflow","contextWindowTokens":2147484000}
+                ]}
+                """);
+
+        assertEquals("grok", settings.providerRef.get());
+        assertEquals(Map.of("grok-4.7", 500_000), settings.contextWindowsRef.get());
+
+        handler.handle(CustomModelPricingHandler.SET_TYPE,
+                "{\"provider\":\"grok\",\"models\":[{\"id\":\"grok-4.7\"}]}");
+        assertTrue(settings.contextWindowsRef.get().isEmpty());
+    }
+
+    @Test
+    public void shouldRoundTripGrokContextWindowsWithoutChangingCodex() throws Exception {
+        Path config = Files.createTempFile("grok-context-settings", ".json");
+        Files.writeString(config, "{}");
+        CodemossSettingsService settings = new CodemossSettingsService() {
+            @Override
+            public JsonObject readConfig() throws IOException {
+                return JsonParser.parseString(Files.readString(config)).getAsJsonObject();
+            }
+
+            @Override
+            public void writeConfig(JsonObject value) throws IOException {
+                Files.writeString(config, value.toString());
+            }
+        };
+        CustomModelPricingHandler handler = new CustomModelPricingHandler(null, settings);
+        try {
+            settings.setCustomModelContextWindows("codex", Map.of("grok-4.7", 750_000));
+            handler.handle(CustomModelPricingHandler.SET_TYPE,
+                    "{\"provider\":\"grok\",\"models\":[{\"id\":\"grok-4.7\",\"contextWindowTokens\":500000}]}");
+
+            CustomModelContextWindowProvider reader = CustomModelContextWindowProvider.createForTests(config);
+            assertEquals(500_000, reader.getContextWindow("grok", "grok-4.7").orElseThrow());
+            assertEquals(750_000, reader.getContextWindow("codex", "grok-4.7").orElseThrow());
+
+            handler.handle(CustomModelPricingHandler.SET_TYPE, "{\"provider\":\"grok\",\"models\":[]}");
+            reader.invalidateCache();
+            assertFalse(reader.getContextWindow("grok", "grok-4.7").isPresent());
+            assertEquals(750_000, reader.getContextWindow("codex", "grok-4.7").orElseThrow());
+        } finally {
+            Files.deleteIfExists(config);
+        }
     }
 
     @Test

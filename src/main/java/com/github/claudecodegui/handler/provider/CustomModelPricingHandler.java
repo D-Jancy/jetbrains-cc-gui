@@ -17,15 +17,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Handles persistence of user-configured model pricing and Codex context windows.
+ * Handles persistence of user-configured model pricing and Codex/Grok context windows.
  *
  * <p>The frontend sends {@code set_custom_model_pricing} whenever plugin-level custom models or
  * pricing-only Claude configured models change. The payload shape is:
  * <pre>
- * { "provider": "claude"|"codex", "models": [ { "id": "...", "pricing": { ... } } ] }
+ * { "provider": "claude"|"codex"|"grok", "models": [ { "id": "...", "pricing": { ... } } ] }
  * </pre>
- * Pricing is supported for both provider families. Context-window metadata is accepted only for
- * Codex models so Claude's runtime-controlled context behavior remains unchanged.
+ * Context-window metadata is accepted for Codex and Grok models.
  */
 public class CustomModelPricingHandler extends BaseMessageHandler {
 
@@ -52,14 +51,14 @@ public class CustomModelPricingHandler extends BaseMessageHandler {
             String provider = payload.has("provider") && !payload.get("provider").isJsonNull()
                     ? payload.get("provider").getAsString()
                     : null;
-            if (!"claude".equals(provider) && !"codex".equals(provider)) {
+            if (!"claude".equals(provider) && !"codex".equals(provider) && !"grok".equals(provider)) {
                 LOG.warn("[CustomModelPricingHandler] Rejected unknown provider: " + provider);
                 return true;
             }
 
             Map<String, ModelPricing> pricingMap = new LinkedHashMap<>();
             Map<String, Integer> contextWindowMap = new LinkedHashMap<>();
-            boolean supportsContextWindows = "codex".equals(provider);
+            boolean supportsContextWindows = "codex".equals(provider) || "grok".equals(provider);
             if (payload.has("models") && payload.get("models").isJsonArray()) {
                 JsonArray models = payload.getAsJsonArray("models");
                 for (JsonElement el : models) {

@@ -23,7 +23,7 @@ export function resolveCustomModelDialogTarget(provider: string): CustomModelDia
   if (provider === 'grok') {
     return {
       storageKey: STORAGE_KEYS.GROK_CUSTOM_MODELS,
-      contextWindowEnabled: false,
+      contextWindowEnabled: true,
       maxReasoningEffortEnabled: true,
     };
   }

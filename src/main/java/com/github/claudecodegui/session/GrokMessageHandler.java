@@ -417,7 +417,7 @@ public class GrokMessageHandler implements MessageCallback {
             int used = com.github.claudecodegui.provider.grok.GrokContextUsageBuilder.extractUsedTokens(storedUsage);
             if (used > 0) {
                 int maxTokens = com.github.claudecodegui.handler.provider.ModelProviderHandler
-                        .getModelContextLimit(state.getModel());
+                        .getModelContextLimit("grok", state.getModel());
                 LOG.info("Grok [USAGE] context ring: used=" + used + " max=" + maxTokens
                         + " model=" + state.getModel());
                 callbackHandler.notifyUsageUpdate(used, maxTokens);
@@ -570,7 +570,7 @@ public class GrokMessageHandler implements MessageCallback {
             return;
         }
         int maxTokens = com.github.claudecodegui.handler.provider.ModelProviderHandler
-                .getModelContextLimit(state.getModel());
+                .getModelContextLimit("grok", state.getModel());
         LOG.info("Grok stream_end context ring push: used=" + used + " max=" + maxTokens);
         callbackHandler.notifyUsageUpdate(used, maxTokens);
     }

@@ -147,6 +147,9 @@ public class ModelProviderHandlerTest {
                   "customModelContextWindows": {
                     "codex": {
                       "custom-model": 750000
+                    },
+                    "grok": {
+                      "custom-model": 500000
                     }
                   }
                 }
@@ -160,6 +163,9 @@ public class ModelProviderHandlerTest {
             assertEquals(1_000_000, ModelProviderHandler.getModelContextLimit("codex", "custom-model[1m]"));
             assertEquals(500_000, ModelProviderHandler.getModelContextLimit("codex", "legacy-model[500k]"));
             assertEquals(200_000, ModelProviderHandler.getModelContextLimit("codex", "unknown-model"));
+            assertEquals(500_000, ModelProviderHandler.getModelContextLimit("grok", "custom-model"));
+            assertEquals(1_000_000, ModelProviderHandler.getModelContextLimit("grok", "custom-model[1m]"));
+            assertEquals(200_000, ModelProviderHandler.getModelContextLimit("grok", "unknown-model"));
         } finally {
             CustomModelContextWindowProvider.setInstanceForTests(null);
         }
@@ -239,6 +245,30 @@ public class ModelProviderHandlerTest {
         assertFalse(usagePushService.recalculated);
     }
 
+    @Test
+    public void handleSetModelUsesCustomGrokContextWindow() throws Exception {
+        Path config = Files.createTempFile("grok-model-switch-context", ".json");
+        Files.writeString(config, """
+                {"customModelContextWindows":{"grok":{"grok-4.7":500000}}}
+                """);
+        CustomModelContextWindowProvider.setInstanceForTests(
+                CustomModelContextWindowProvider.createForTests(config));
+        try {
+            HandlerContext context = createHandlerContext();
+            context.setCurrentProvider("grok");
+            context.setCurrentModel("grok-4.6");
+            RecordingUsagePushService usagePushService = new RecordingUsagePushService(context);
+
+            new ModelProviderHandler(context, usagePushService).handleSetModel("grok-4.7");
+
+            assertTrue(usagePushService.recalculated);
+            assertEquals(500_000, usagePushService.maxTokens);
+        } finally {
+            CustomModelContextWindowProvider.setInstanceForTests(null);
+            Files.deleteIfExists(config);
+        }
+    }
+
     /**
      * A set_model from the webview is an explicit user choice. A custom model id
      * that is also in the retired-migration table must reach the session verbatim
@@ -287,6 +317,7 @@ public class ModelProviderHandlerTest {
     private static final class RecordingUsagePushService extends UsagePushService {
         private boolean cleared;
         private boolean recalculated;
+        private int maxTokens;
 
         private RecordingUsagePushService(HandlerContext context) {
             super(context);
@@ -300,6 +331,7 @@ public class ModelProviderHandlerTest {
         @Override
         public void pushUsageUpdateAfterModelChange(int newMaxTokens) {
             recalculated = true;
+            maxTokens = newMaxTokens;
         }
     }
 

@@ -583,11 +583,11 @@ public class GrokSDKBridge extends BaseSDKBridge {
     /**
      * Context usage for the /context dialog.
      * Prefer daemon runtime snapshot when available; otherwise synthesize from the
-     * last ACP [USAGE] line + static model context limits.
+     * last ACP [USAGE] line + configured or static model context limits.
      */
     public CompletableFuture<JsonObject> getContextUsage(String sessionId, String cwd, String model) {
         String effectiveModel = (model != null && !model.isEmpty()) ? model : lastUsageModel;
-        int maxTokens = ModelProviderHandler.getModelContextLimit(effectiveModel);
+        int maxTokens = ModelProviderHandler.getModelContextLimit("grok", effectiveModel);
         int usedTokens = lastUsedTokens.get();
 
         DaemonBridge db = daemonCoordinator.getCurrentDaemonBridge();
@@ -617,7 +617,7 @@ public class GrokSDKBridge extends BaseSDKBridge {
             params.addProperty("model", model);
         }
         params.addProperty("usedTokens", lastUsedTokens.get());
-        params.addProperty("maxTokens", ModelProviderHandler.getModelContextLimit(model));
+        params.addProperty("maxTokens", ModelProviderHandler.getModelContextLimit("grok", model));
 
         AtomicReference<JsonObject> resultRef = new AtomicReference<>();
         CompletableFuture<JsonObject> resultFuture = new CompletableFuture<>();

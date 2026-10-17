@@ -3,6 +3,7 @@ package com.github.claudecodegui.ui;
 import com.github.claudecodegui.handler.PermissionHandler;
 import com.github.claudecodegui.handler.SettingsHandler;
 import com.github.claudecodegui.handler.core.HandlerContext;
+import com.github.claudecodegui.provider.CustomModelContextWindowProvider;
 import com.github.claudecodegui.session.ClaudeSession;
 import com.github.claudecodegui.session.SessionLifecycleManager;
 import com.github.claudecodegui.session.StreamMessageCoalescer;
@@ -12,6 +13,8 @@ import org.junit.Test;
 
 import javax.swing.JPanel;
 import java.lang.reflect.Proxy;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -55,6 +58,23 @@ public class ChatWindowDelegateTest {
         );
 
         assertEquals(SettingsHandler.getModelContextLimit("codex", "gpt-5.6-sol"), limit);
+    }
+
+    @Test
+    public void resolvesGrokRecoveryLimitFromCustomContextWindow() throws Exception {
+        Path config = Files.createTempFile("grok-recovery-context", ".json");
+        Files.writeString(config, """
+                {"customModelContextWindows":{"grok":{"grok-4.7":500000}}}
+                """);
+        CustomModelContextWindowProvider.setInstanceForTests(
+                CustomModelContextWindowProvider.createForTests(config));
+        try {
+            assertEquals(500_000, ChatWindowDelegate.resolveModelContextLimitForRecovery(
+                    "grok", "grok-4.7", null));
+        } finally {
+            CustomModelContextWindowProvider.setInstanceForTests(null);
+            Files.deleteIfExists(config);
+        }
     }
 
     /**

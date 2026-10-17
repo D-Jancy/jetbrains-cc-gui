@@ -19,7 +19,7 @@ interface CustomModelDialogProps {
   configuredModels?: CodexCustomModel[];
   onConfiguredModelPricingChange?: (modelId: string, pricing?: ModelPricing) => void;
   onClose: () => void;
-  /** Enables Codex-only context-window metadata editing. */
+  /** Enables context-window metadata editing for Codex and Grok custom models. */
   contextWindowEnabled?: boolean;
   /** Enables MAX reasoning capability editing (Codex and Grok custom models). */
   maxReasoningEffortEnabled?: boolean;

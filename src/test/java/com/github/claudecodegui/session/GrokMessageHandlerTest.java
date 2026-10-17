@@ -1,9 +1,12 @@
 package com.github.claudecodegui.session;
 
 import com.github.claudecodegui.permission.PermissionRequest;
+import com.github.claudecodegui.provider.CustomModelContextWindowProvider;
 import com.github.claudecodegui.session.ClaudeSession.Message;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -156,6 +159,37 @@ public class GrokMessageHandlerTest {
         // Accumulator is cleared on block_reset; subsequent deltas start a new text segment
         // on the same stream-owned bubble.
         assertTrue(messages.get(1).content.contains("after tools") || messages.get(1).content.equals(" after tools"));
+    }
+
+    @Test
+    public void customContextWindowAppliesToUsageAndStreamEnd() throws Exception {
+        Path config = Files.createTempFile("grok-message-context", ".json");
+        Files.writeString(config, """
+                {"customModelContextWindows":{"grok":{"grok-4.7":500000}}}
+                """);
+        CustomModelContextWindowProvider.setInstanceForTests(
+                CustomModelContextWindowProvider.createForTests(config));
+        try {
+            SessionState state = new SessionState();
+            state.setModelVerbatim("grok-4.7");
+            state.addMessage(new Message(Message.Type.USER, "q"));
+            RecordingCallback callback = new RecordingCallback();
+            GrokMessageHandler handler = newHandler(state, callback);
+
+            handler.onMessage("stream_start", "");
+            handler.onMessage("usage", "{\"total_tokens\":50000}");
+            assertEquals(50_000, callback.usageUpdates.get(0)[0]);
+            assertEquals(500_000, callback.usageUpdates.get(0)[1]);
+
+            handler.onMessage("stream_end", "");
+            assertTrue(callback.usageUpdates.size() >= 2);
+            int[] finalUsage = callback.usageUpdates.get(callback.usageUpdates.size() - 1);
+            assertEquals(50_000, finalUsage[0]);
+            assertEquals(500_000, finalUsage[1]);
+        } finally {
+            CustomModelContextWindowProvider.setInstanceForTests(null);
+            Files.deleteIfExists(config);
+        }
     }
 
     @Test

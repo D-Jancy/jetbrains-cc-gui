@@ -141,9 +141,9 @@ public class ModelProviderHandler {
             }
 
             String provider = context.getCurrentProvider();
-            boolean isCodex = "codex".equalsIgnoreCase(provider);
-            String resolvedModelForUsage = isCodex ? model : resolveConfiguredClaudeModelFromSettings(model);
-            int newMaxTokens = isCodex
+            boolean supportsCustomContext = "codex".equalsIgnoreCase(provider) || "grok".equalsIgnoreCase(provider);
+            String resolvedModelForUsage = supportsCustomContext ? model : resolveConfiguredClaudeModelFromSettings(model);
+            int newMaxTokens = supportsCustomContext
                     ? getModelContextLimit(provider, model)
                     : getModelContextLimit(resolvedModelForUsage);
             LOG.info("[ModelProviderHandler] Model context limit: " + newMaxTokens

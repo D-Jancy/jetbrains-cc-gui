@@ -174,8 +174,11 @@ describe('usePluginModels', () => {
     }));
   });
 
-  it('persists and syncs a custom context window alongside pricing', () => {
-    const { result } = renderHook(() => usePluginModels(STORAGE_KEYS.CODEX_CUSTOM_MODELS));
+  it.each([
+    ['codex', STORAGE_KEYS.CODEX_CUSTOM_MODELS],
+    ['grok', STORAGE_KEYS.GROK_CUSTOM_MODELS],
+  ])('persists, syncs and clears a custom context window for %s', (provider, storageKey) => {
+    const { result } = renderHook(() => usePluginModels(storageKey));
 
     act(() => {
       result.current.updateModels([{
@@ -194,10 +197,18 @@ describe('usePluginModels', () => {
     }];
 
     expect(result.current.models).toEqual(expectedModels);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.CODEX_CUSTOM_MODELS) || '[]')).toEqual(expectedModels);
+    expect(JSON.parse(localStorage.getItem(storageKey) || '[]')).toEqual(expectedModels);
     expect(sendBridgeEventMock).toHaveBeenLastCalledWith('set_custom_model_pricing', JSON.stringify({
-      provider: 'codex',
+      provider,
       models: expectedModels,
+    }));
+
+    act(() => result.current.updateModels([]));
+
+    expect(JSON.parse(localStorage.getItem(storageKey) || '[]')).toEqual([]);
+    expect(sendBridgeEventMock).toHaveBeenLastCalledWith('set_custom_model_pricing', JSON.stringify({
+      provider,
+      models: [],
     }));
   });
 });

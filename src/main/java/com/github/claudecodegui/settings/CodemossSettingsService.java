@@ -2616,7 +2616,7 @@ public class CodemossSettingsService {
     /**
      * Persist user-configured model pricing for a provider family, replacing the whole map.
      *
-     * @param provider {@code "claude"} or {@code "codex"}
+     * @param provider {@code "claude"}, {@code "codex"}, or {@code "grok"}
      * @param pricing  map of model ID → pricing; empty or null clears the provider entry
      */
     public void setCustomModelPricing(String provider, Map<String, ModelPricing> pricing) throws IOException {
@@ -2646,13 +2646,14 @@ public class CodemossSettingsService {
     }
 
     /**
-     * Persist user-configured Codex model context windows, replacing the whole map.
+     * Persist user-configured Codex/Grok model context windows, replacing the whole map.
      */
     public void setCustomModelContextWindows(String provider, Map<String, Integer> contextWindows) throws IOException {
-        if (!"codex".equalsIgnoreCase(provider)) {
+        if (!"codex".equalsIgnoreCase(provider) && !"grok".equalsIgnoreCase(provider)) {
             LOG.warn("[CodemossSettings] Ignored custom context windows for unsupported provider: " + provider);
             return;
         }
+        String providerKey = "grok".equalsIgnoreCase(provider) ? "grok" : "codex";
         JsonObject config = readConfig();
 
         JsonObject root;
@@ -2664,7 +2665,7 @@ public class CodemossSettingsService {
         }
 
         if (contextWindows == null || contextWindows.isEmpty()) {
-            root.remove("codex");
+            root.remove(providerKey);
         } else {
             JsonObject providerNode = new JsonObject();
             for (Map.Entry<String, Integer> entry : contextWindows.entrySet()) {
@@ -2674,14 +2675,14 @@ public class CodemossSettingsService {
                 }
             }
             if (providerNode.size() == 0) {
-                root.remove("codex");
+                root.remove(providerKey);
             } else {
-                root.add("codex", providerNode);
+                root.add(providerKey, providerNode);
             }
         }
 
         writeConfig(config);
-        LOG.info("[CodemossSettings] Set user model context windows for codex"
+        LOG.info("[CodemossSettings] Set user model context windows for " + providerKey
                 + ": " + (contextWindows == null ? 0 : contextWindows.size()) + " models");
     }
 

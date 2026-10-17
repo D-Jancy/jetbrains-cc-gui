@@ -3,10 +3,10 @@ import { STORAGE_KEYS } from '../../types/provider';
 import { resolveCustomModelDialogTarget } from './customModelDialogTarget';
 
 describe('resolveCustomModelDialogTarget', () => {
-  it('keeps Grok custom models out of the Claude store and enables MAX effort', () => {
+  it('keeps Grok custom models in their own store and enables context and MAX effort editing', () => {
     expect(resolveCustomModelDialogTarget('grok')).toEqual({
       storageKey: STORAGE_KEYS.GROK_CUSTOM_MODELS,
-      contextWindowEnabled: false,
+      contextWindowEnabled: true,
       maxReasoningEffortEnabled: true,
     });
   });
