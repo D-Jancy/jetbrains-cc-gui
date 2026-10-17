@@ -65,6 +65,21 @@ public class GrokSDKBridgeTest {
     }
 
     @Test
+    public void grok47ContextUsageUses500KWindow() {
+        GrokSDKBridge bridge = new GrokSDKBridge();
+        bridge.setLastUsedTokensForTest(250_000);
+
+        JsonObject result = bridge.getContextUsage("sess", "/tmp", "grok-4.7").join();
+
+        assertEquals(250_000, result.get("totalTokens").getAsInt());
+        assertEquals(500_000, result.get("maxTokens").getAsInt());
+        assertEquals(500_000, result.get("rawMaxTokens").getAsInt());
+        assertEquals(50.0, result.get("percentage").getAsDouble(), 0.001);
+        assertEquals(250_000, result.getAsJsonArray("categories").get(1)
+                .getAsJsonObject().get("tokens").getAsInt());
+    }
+
+    @Test
     public void getUsageReturnsStructuredUnavailableWithoutHangingWhenNoDaemon() {
         GrokSDKBridge bridge = new GrokSDKBridge();
         JsonObject result = bridge.getUsage("/tmp").join();

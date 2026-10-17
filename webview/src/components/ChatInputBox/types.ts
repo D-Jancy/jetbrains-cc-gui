@@ -510,6 +510,11 @@ export const GROK_MODELS: ModelInfo[] = [
     description: 'xAI Grok 4.6',
   },
   {
+    id: 'grok-4.7',
+    label: 'Grok 4.7',
+    description: 'xAI Grok 4.7',
+  },
+  {
     id: 'grok-3',
     label: 'Grok 3',
     description: 'xAI Grok 3',

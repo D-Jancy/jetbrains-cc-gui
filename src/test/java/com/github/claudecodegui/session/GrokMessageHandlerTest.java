@@ -175,6 +175,28 @@ public class GrokMessageHandlerTest {
     }
 
     @Test
+    public void grok47Uses500KForUsageAndStreamEndUpdates() {
+        SessionState state = new SessionState();
+        state.setModel("grok-4.7");
+        state.addMessage(new Message(Message.Type.USER, "q"));
+
+        RecordingCallback callback = new RecordingCallback();
+        GrokMessageHandler handler = newHandler(state, callback);
+        handler.onMessage("stream_start", "");
+        handler.onMessage("usage", "{\"totalTokens\":250000}");
+
+        assertEquals(1, callback.usageUpdates.size());
+        assertEquals(250_000, callback.usageUpdates.get(0)[0]);
+        assertEquals(500_000, callback.usageUpdates.get(0)[1]);
+
+        handler.onMessage("stream_end", "");
+
+        assertEquals(2, callback.usageUpdates.size());
+        assertEquals(250_000, callback.usageUpdates.get(1)[0]);
+        assertEquals(500_000, callback.usageUpdates.get(1)[1]);
+    }
+
+    @Test
     public void snakeCaseUsageUpdatesContextRingAndStoresCanonical() {
         SessionState state = new SessionState();
         state.setModel("grok-4.6");
